@@ -1,7 +1,7 @@
 require 'tokenizer'
 
 RSpec.describe Tokenizer do
-  it "tokenizes" do
+  it "tokenizes ArrayTest" do
     input = <<-EOJACK
 // This file is part of www.nand2tetris.org
 // and the book "The Elements of Computing Systems"
@@ -176,6 +176,453 @@ class Main {
       [:symbol, "."],
       [:identifier, "println"],
       [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:symbol, "}"]
+    ]
+
+    tokenizer = Tokenizer.new(input)
+
+    while tokenizer.has_more_tokens?
+      tokenizer.advance
+
+      actual = case tokenizer.token_type
+      when Tokenizer::KEYWORD
+        [:keyword, tokenizer.keyword]
+      when Tokenizer::SYMBOL
+        [:symbol, tokenizer.symbol]
+      when Tokenizer::IDENTIFIER
+        [:identifier, tokenizer.identifier]
+      when Tokenizer::INT_CONST
+        [:integerConstant, tokenizer.int_val]
+      when Tokenizer::STRING_CONST
+        [:stringConstant, tokenizer.string_val]
+      end
+
+      expect(actual).to eq(expected.shift)
+    end
+
+    expect(expected).to be_empty
+  end
+
+  it "tokenizes SquareGame" do
+    input = <<-EOJACK
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/09/Square/SquareGame.jack
+
+/**
+ * Implements the Square Dance game.
+ * In this game you can move a black square around the screen and
+ * change its size during the movement.
+ * In the beginning, the square is located at the top-left corner
+ * of the screen. The arrow keys are used to move the square.
+ * The 'z' & 'x' keys are used to decrement and increment the size.
+ * The 'q' key is used to quit the game.
+ */
+class SquareGame {
+
+    // The square
+    field Square square;
+
+    // The square's movement direction
+    field int direction; // 0=none,1=up,2=down,3=left,4=right
+
+    /** Constructs a new Square Game. */
+    constructor SquareGame new() {
+        let square = Square.new(0, 0, 30);
+        let direction = 0;
+
+        return this;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do square.dispose();
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Starts the game. Handles inputs from the user that control
+     *  the square's movement, direction and size. */
+    method void run() {
+        var char key;
+        var boolean exit;
+
+        let exit = false;
+
+        while (~exit) {
+            // waits for a key to be pressed.
+            while (key = 0) {
+                let key = Keyboard.keyPressed();
+                do moveSquare();
+            }
+
+            if (key = 81) {
+                let exit = true;
+            }
+            if (key = 90) {
+                do square.decSize();
+            }
+            if (key = 88) {
+                do square.incSize();
+            }
+            if (key = 131) {
+                let direction = 1;
+            }
+            if (key = 133) {
+                let direction = 2;
+            }
+            if (key = 130) {
+                let direction = 3;
+            }
+            if (key = 132) {
+                let direction = 4;
+            }
+
+            // waits for the key to be released.
+            while (~(key = 0)) {
+                let key = Keyboard.keyPressed();
+                do moveSquare();
+            }
+        }
+
+        return;
+  }
+
+    /** Moves the square by 2 pixels in the current direction. */
+    method void moveSquare() {
+        if (direction = 1) {
+            do square.moveUp();
+        }
+        if (direction = 2) {
+            do square.moveDown();
+        }
+        if (direction = 3) {
+            do square.moveLeft();
+        }
+        if (direction = 4) {
+            do square.moveRight();
+        }
+
+        do Sys.wait(5); // Delays the next movement.
+        return;
+    }
+}
+    EOJACK
+
+    expected = [
+      [:keyword, "class"],
+      [:identifier, "SquareGame"],
+      [:symbol, "{"],
+      [:keyword, "field"],
+      [:identifier, "Square"],
+      [:identifier, "square"],
+      [:symbol, ";"],
+      [:keyword, "field"],
+      [:keyword, "int"],
+      [:identifier, "direction"],
+      [:symbol, ";"],
+      [:keyword, "constructor"],
+      [:identifier, "SquareGame"],
+      [:identifier, "new"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "square"],
+      [:symbol, "="],
+      [:identifier, "Square"],
+      [:symbol, "."],
+      [:identifier, "new"],
+      [:symbol, "("],
+      [:integerConstant, "0"],
+      [:symbol, ","],
+      [:integerConstant, "0"],
+      [:symbol, ","],
+      [:integerConstant, "30"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "0"],
+      [:symbol, ";"],
+      [:keyword, "return"],
+      [:keyword, "this"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "dispose"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "square"],
+      [:symbol, "."],
+      [:identifier, "dispose"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Memory"],
+      [:symbol, "."],
+      [:identifier, "deAlloc"],
+      [:symbol, "("],
+      [:keyword, "this"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "run"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "var"],
+      [:keyword, "char"],
+      [:identifier, "key"],
+      [:symbol, ";"],
+      [:keyword, "var"],
+      [:keyword, "boolean"],
+      [:identifier, "exit"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "exit"],
+      [:symbol, "="],
+      [:keyword, "false"],
+      [:symbol, ";"],
+      [:keyword, "while"],
+      [:symbol, "("],
+      [:symbol, "~"],
+      [:identifier, "exit"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "while"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "0"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:identifier, "Keyboard"],
+      [:symbol, "."],
+      [:identifier, "keyPressed"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "moveSquare"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "81"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "exit"],
+      [:symbol, "="],
+      [:keyword, "true"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "90"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "square"],
+      [:symbol, "."],
+      [:identifier, "decSize"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "88"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "square"],
+      [:symbol, "."],
+      [:identifier, "incSize"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "131"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "1"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "133"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "2"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "130"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "3"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "132"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "4"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "while"],
+      [:symbol, "("],
+      [:symbol, "~"],
+      [:symbol, "("],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:integerConstant, "0"],
+      [:symbol, ")"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "key"],
+      [:symbol, "="],
+      [:identifier, "Keyboard"],
+      [:symbol, "."],
+      [:identifier, "keyPressed"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "moveSquare"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:symbol, "}"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "moveSquare"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "1"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "square"],
+      [:symbol, "."],
+      [:identifier, "moveUp"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "2"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "square"],
+      [:symbol, "."],
+      [:identifier, "moveDown"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "3"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "square"],
+      [:symbol, "."],
+      [:identifier, "moveLeft"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "direction"],
+      [:symbol, "="],
+      [:integerConstant, "4"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "square"],
+      [:symbol, "."],
+      [:identifier, "moveRight"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "do"],
+      [:identifier, "Sys"],
+      [:symbol, "."],
+      [:identifier, "wait"],
+      [:symbol, "("],
+      [:integerConstant, "5"],
       [:symbol, ")"],
       [:symbol, ";"],
       [:keyword, "return"],

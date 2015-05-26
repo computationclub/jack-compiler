@@ -654,4 +654,711 @@ class SquareGame {
 
     expect(expected).to be_empty
   end
+
+  it "tokenizes Square" do
+    input = <<-EOJACK
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/09/Square/Square.jack
+
+/**
+ * Implements a graphic square. A graphic square has a screen location
+ * and a size. It also has methods for drawing, erasing, moving on the
+ * screen, and changing its size.
+ */
+class Square {
+
+    // Location on the screen
+    field int x, y;
+
+    // The size of the square
+    field int size;
+
+    /** Constructs a new square with a given location and size. */
+    constructor Square new(int Ax, int Ay, int Asize) {
+        let x = Ax;
+        let y = Ay;
+        let size = Asize;
+
+        do draw();
+
+        return this;
+    }
+
+    /** Deallocates the object's memory. */
+    method void dispose() {
+        do Memory.deAlloc(this);
+        return;
+    }
+
+    /** Draws the square on the screen. */
+    method void draw() {
+        do Screen.setColor(true);
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+
+    /** Erases the square from the screen. */
+    method void erase() {
+        do Screen.setColor(false);
+        do Screen.drawRectangle(x, y, x + size, y + size);
+        return;
+    }
+
+    /** Increments the size by 2 pixels. */
+    method void incSize() {
+        if (((y + size) < 254) & ((x + size) < 510)) {
+            do erase();
+            let size = size + 2;
+            do draw();
+        }
+        return;
+    }
+
+    /** Decrements the size by 2 pixels. */
+    method void decSize() {
+        if (size > 2) {
+            do erase();
+            let size = size - 2;
+            do draw();
+        }
+        return;
+  }
+
+    /** Moves up by 2 pixels. */
+    method void moveUp() {
+        if (y > 1) {
+            do Screen.setColor(false);
+            do Screen.drawRectangle(x, (y + size) - 1, x + size, y + size);
+            let y = y - 2;
+            do Screen.setColor(true);
+            do Screen.drawRectangle(x, y, x + size, y + 1);
+        }
+        return;
+    }
+
+    /** Moves down by 2 pixels. */
+    method void moveDown() {
+        if ((y + size) < 254) {
+            do Screen.setColor(false);
+            do Screen.drawRectangle(x, y, x + size, y + 1);
+            let y = y + 2;
+            do Screen.setColor(true);
+            do Screen.drawRectangle(x, (y + size) - 1, x + size, y + size);
+        }
+        return;
+    }
+
+    /** Moves left by 2 pixels. */
+    method void moveLeft() {
+        if (x > 1) {
+            do Screen.setColor(false);
+            do Screen.drawRectangle((x + size) - 1, y, x + size, y + size);
+            let x = x - 2;
+            do Screen.setColor(true);
+            do Screen.drawRectangle(x, y, x + 1, y + size);
+        }
+        return;
+    }
+
+    /** Moves right by 2 pixels. */
+    method void moveRight() {
+        if ((x + size) < 510) {
+            do Screen.setColor(false);
+            do Screen.drawRectangle(x, y, x + 1, y + size);
+            let x = x + 2;
+            do Screen.setColor(true);
+            do Screen.drawRectangle((x + size) - 1, y, x + size, y + size);
+        }
+        return;
+    }
+}
+    EOJACK
+
+    expected = [
+      [:keyword, "class"],
+      [:identifier, "Square"],
+      [:symbol, "{"],
+      [:keyword, "field"],
+      [:keyword, "int"],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ";"],
+      [:keyword, "field"],
+      [:keyword, "int"],
+      [:identifier, "size"],
+      [:symbol, ";"],
+      [:keyword, "constructor"],
+      [:identifier, "Square"],
+      [:identifier, "new"],
+      [:symbol, "("],
+      [:keyword, "int"],
+      [:identifier, "Ax"],
+      [:symbol, ","],
+      [:keyword, "int"],
+      [:identifier, "Ay"],
+      [:symbol, ","],
+      [:keyword, "int"],
+      [:identifier, "Asize"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "let"],
+      [:identifier, "x"],
+      [:symbol, "="],
+      [:identifier, "Ax"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "y"],
+      [:symbol, "="],
+      [:identifier, "Ay"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "size"],
+      [:symbol, "="],
+      [:identifier, "Asize"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "draw"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "return"],
+      [:keyword, "this"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "dispose"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "Memory"],
+      [:symbol, "."],
+      [:identifier, "deAlloc"],
+      [:symbol, "("],
+      [:keyword, "this"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "draw"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "true"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "erase"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "false"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "incSize"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:symbol, "("],
+      [:symbol, "("],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "<"],
+      [:integerConstant, "254"],
+      [:symbol, ")"],
+      [:symbol, "&"],
+      [:symbol, "("],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "<"],
+      [:integerConstant, "510"],
+      [:symbol, ")"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "erase"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "size"],
+      [:symbol, "="],
+      [:identifier, "size"],
+      [:symbol, "+"],
+      [:integerConstant, "2"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "draw"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "decSize"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "size"],
+      [:symbol, ">"],
+      [:integerConstant, "2"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "erase"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "size"],
+      [:symbol, "="],
+      [:identifier, "size"],
+      [:symbol, "-"],
+      [:integerConstant, "2"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "draw"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "moveUp"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "y"],
+      [:symbol, ">"],
+      [:integerConstant, "1"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "false"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:symbol, "("],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "-"],
+      [:integerConstant, "1"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "y"],
+      [:symbol, "="],
+      [:identifier, "y"],
+      [:symbol, "-"],
+      [:integerConstant, "2"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "true"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:integerConstant, "1"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "moveDown"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:symbol, "("],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "<"],
+      [:integerConstant, "254"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "false"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:integerConstant, "1"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "y"],
+      [:symbol, "="],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:integerConstant, "2"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "true"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:symbol, "("],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "-"],
+      [:integerConstant, "1"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "moveLeft"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ">"],
+      [:integerConstant, "1"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "false"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "-"],
+      [:integerConstant, "1"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "x"],
+      [:symbol, "="],
+      [:identifier, "x"],
+      [:symbol, "-"],
+      [:integerConstant, "2"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "true"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:integerConstant, "1"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "method"],
+      [:keyword, "void"],
+      [:identifier, "moveRight"],
+      [:symbol, "("],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "if"],
+      [:symbol, "("],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "<"],
+      [:integerConstant, "510"],
+      [:symbol, ")"],
+      [:symbol, "{"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "false"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:integerConstant, "1"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "let"],
+      [:identifier, "x"],
+      [:symbol, "="],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:integerConstant, "2"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "setColor"],
+      [:symbol, "("],
+      [:keyword, "true"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:keyword, "do"],
+      [:identifier, "Screen"],
+      [:symbol, "."],
+      [:identifier, "drawRectangle"],
+      [:symbol, "("],
+      [:symbol, "("],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, "-"],
+      [:integerConstant, "1"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, ","],
+      [:identifier, "x"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ","],
+      [:identifier, "y"],
+      [:symbol, "+"],
+      [:identifier, "size"],
+      [:symbol, ")"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:keyword, "return"],
+      [:symbol, ";"],
+      [:symbol, "}"],
+      [:symbol, "}"]
+    ]
+
+    tokenizer = Tokenizer.new(input)
+
+    while tokenizer.has_more_tokens?
+      tokenizer.advance
+
+      actual = case tokenizer.token_type
+      when Tokenizer::KEYWORD
+        [:keyword, tokenizer.keyword]
+      when Tokenizer::SYMBOL
+        [:symbol, tokenizer.symbol]
+      when Tokenizer::IDENTIFIER
+        [:identifier, tokenizer.identifier]
+      when Tokenizer::INT_CONST
+        [:integerConstant, tokenizer.int_val]
+      when Tokenizer::STRING_CONST
+        [:stringConstant, tokenizer.string_val]
+      end
+
+      expect(actual).to eq(expected.shift)
+    end
+
+    expect(expected).to be_empty
+  end
 end

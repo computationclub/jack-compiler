@@ -38,14 +38,14 @@ class Tokenizer
       self.token_type = STRING_CONST
       self.string_val = next_word
     else
-      next_word = input[%r{(\w+|[()\[\]{}.,;=<>*/+~-])}]
+      next_word = input[%r{(\w+|[()\[\]{}.,;=<>&*/+~-])}]
       input.sub!(next_word, '')
 
       case next_word
       when *ALL_KEYWORDS
         self.token_type = KEYWORD
         self.keyword = next_word
-      when '(', ')', '[', ']', '{', '}', '.', ',', ';', '=', '<', '>', '*', '/', '+', '-', '~'
+      when '(', ')', '[', ']', '{', '}', '.', ',', ';', '=', '<', '>', '&', '*', '/', '+', '-', '~'
         self.token_type = SYMBOL
         self.symbol = next_word
       when /\d+/

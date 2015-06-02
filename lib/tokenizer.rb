@@ -1,6 +1,13 @@
 class Tokenizer
-  KEYWORD, SYMBOL, IDENTIFIER,
-  INT_CONST, STRING_CONST = 5.times.map { Object.new }
+  %w[
+   keyword
+   symbol
+   identifier
+   int_const
+   string_const
+  ].each do |name|
+    const_set(name.upcase, name.to_sym)
+  end
 
   ALL_KEYWORDS = %w[
     class method function constructor

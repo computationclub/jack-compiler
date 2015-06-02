@@ -32,13 +32,11 @@ class Parser
   def compile_class
     b.tag!(:class) do
       consume(Tokenizer::KEYWORD, 'class')
-      b.keyword('class')
 
       _, identifier = input.next # identifier
       b.identifier(identifier)
 
       consume(Tokenizer::SYMBOL, '{')
-      b.symbol('{')
 
       _, keyword = input.peek # 'field' or 'static'
 
@@ -53,7 +51,6 @@ class Parser
       end
 
       consume(Tokenizer::SYMBOL, '}')
-      b.symbol('}')
     end
   end
 
@@ -92,12 +89,10 @@ class Parser
       b.identifier(identifier)
 
       consume(Tokenizer::SYMBOL, '(')
-      b.symbol('(')
 
       compile_parameter_list
 
       consume(Tokenizer::SYMBOL, ')')
-      b.symbol(')')
 
       compile_subroutine_body
     end
@@ -126,12 +121,10 @@ class Parser
   def compile_subroutine_body
     b.subroutineBody do
       consume(Tokenizer::SYMBOL, '{')
-      b.symbol('{')
 
       compile_statements
 
       consume(Tokenizer::SYMBOL, '}')
-      b.symbol('}')
     end
   end
 
@@ -158,25 +151,21 @@ class Parser
   def compile_let
     b.letStatement do
       consume(Tokenizer::KEYWORD, 'let')
-      b.keyword('let')
 
       _, identifier = input.next
       b.identifier(identifier)
 
       consume(Tokenizer::SYMBOL, '=')
-      b.symbol('=')
 
       compile_expression
 
       consume(Tokenizer::SYMBOL, ';')
-      b.symbol(';')
     end
   end
 
   def compile_do
     b.doStatement do
       consume(Tokenizer::KEYWORD, 'do')
-      b.keyword('do')
 
       _, identifier = input.next
       b.identifier(identifier)
@@ -191,22 +180,17 @@ class Parser
       end
 
       consume(Tokenizer::SYMBOL, '(')
-      b.symbol('(')
 
       compile_expression_list
 
       consume(Tokenizer::SYMBOL, ')')
-      b.symbol(')')
-
       consume(Tokenizer::SYMBOL, ';')
-      b.symbol(';')
     end
   end
 
   def compile_return
     b.returnStatement do
       consume(Tokenizer::KEYWORD, 'return')
-      b.keyword('return')
 
       _, text = input.peek
       compile_expression unless text == ';'
@@ -219,23 +203,17 @@ class Parser
   def compile_if
     b.ifStatement do
       consume(Tokenizer::KEYWORD, 'if')
-      b.keyword('if')
-
       consume(Tokenizer::SYMBOL, '(')
-      b.symbol('(')
 
       compile_expression
 
       consume(Tokenizer::SYMBOL, ')')
-      b.symbol(')')
 
       consume(Tokenizer::SYMBOL, '{')
-      b.symbol('{')
 
       compile_statements
 
       consume(Tokenizer::SYMBOL, '}')
-      b.symbol('}')
     end
   end
 
@@ -277,6 +255,8 @@ class Parser
     unless actual_type == expected_type && actual_token == expected_token
       raise "expected a #{expected_type} `#{expected_token}`, got #{actual_type} `#{actual_token}`"
     end
+
+    b.tag!(expected_type, expected_token)
   end
 
   def b

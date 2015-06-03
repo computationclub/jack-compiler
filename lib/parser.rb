@@ -4,50 +4,34 @@ class Parser
   attr_reader :input
 
   def initialize(input, output)
-    @input = Enumerator.new do |yielder|
-      while input.has_more_tokens?
-        input.advance
-
-        type = input.token_type
-        text = case type
-          when Tokenizer::KEYWORD
-            input.keyword
-          when Tokenizer::SYMBOL
-            input.symbol
-          when Tokenizer::IDENTIFIER
-            input.identifier
-          when Tokenizer::INT_CONST
-            input.int_val
-          when Tokenizer::STRING_CONST
-            input.string_val
-        end
-
-        yielder.yield [type, text]
-      end
-    end
+    @input = input
 
     @builder = Builder::XmlMarkup.new(target: output, indent: 2)
   end
 
   def compile_class
     b.tag!(:class) do
+      # Get the ball moving!
+      input.advance
+
       consume(Tokenizer::KEYWORD, 'class')
 
-      _, identifier = input.next # identifier
+      _, identifier = current_token # identifier
       b.identifier(identifier)
+      input.advance
 
       consume(Tokenizer::SYMBOL, '{')
 
-      _, keyword = input.peek # 'field' or 'static'
+      _, keyword = current_token # 'field' or 'static'
 
       while %w[field static].include? keyword
         compile_class_var_dec
-        _, keyword = input.peek
+        _, keyword = current_token
       end
 
       while %w[constructor function method].include? keyword
         compile_subroutine
-        _, keyword = input.peek
+        _, keyword = current_token
       end
 
       consume(Tokenizer::SYMBOL, '}')
@@ -56,37 +40,44 @@ class Parser
 
   def compile_class_var_dec
     b.classVarDec do
-      _, keyword = input.next
+      _, keyword = current_token
       b.keyword(keyword)
+      input.advance
 
-      _, keyword = input.next
+      _, keyword = current_token
       b.keyword(keyword)
+      input.advance
 
       begin
-        _, identifier = input.next
+        _, identifier = current_token
         b.identifier(identifier)
+        input.advance
 
-        _, symbol = input.next
+        _, symbol = current_token
         b.symbol(symbol)
+        input.advance
       end while symbol == ','
     end
   end
 
   def compile_subroutine
     b.subroutineDec do
-      _, keyword = input.next
+      _, keyword = current_token
       b.keyword(keyword)
+      input.advance
 
-      type, text = input.next
+      type, text = current_token
       case type
       when Tokenizer::KEYWORD
         b.keyword(text)
       when Tokenizer::IDENTIFIER
         b.identifier(text)
       end
+      input.advance
 
-      _, identifier = input.next # subroutine name
+      _, identifier = current_token # subroutine name
       b.identifier(identifier)
+      input.advance
 
       consume(Tokenizer::SYMBOL, '(')
 
@@ -100,19 +91,21 @@ class Parser
 
   def compile_parameter_list
     b.parameterList do
-      _, symbol = input.peek
+      _, symbol = current_token
 
       until symbol == ')'
-        _, keyword = input.next
+        _, keyword = current_token
         b.keyword(keyword)
+        input.advance
 
-        _, identifier = input.next
+        _, identifier = current_token
         b.identifier(identifier)
+        input.advance
 
-        _, symbol = input.peek
+        _, symbol = current_token
         if symbol == ','
           b.symbol(',')
-          input.next
+          input.advance
         end
       end
     end
@@ -131,7 +124,7 @@ class Parser
   def compile_statements
     b.statements do
       loop do
-        _, text = input.peek
+        _, text = current_token
         case text
         when 'let'
           compile_let
@@ -152,8 +145,9 @@ class Parser
     b.letStatement do
       consume(Tokenizer::KEYWORD, 'let')
 
-      _, identifier = input.next
+      _, identifier = current_token
       b.identifier(identifier)
+      input.advance
 
       consume(Tokenizer::SYMBOL, '=')
 
@@ -167,16 +161,18 @@ class Parser
     b.doStatement do
       consume(Tokenizer::KEYWORD, 'do')
 
-      _, identifier = input.next
+      _, identifier = current_token
       b.identifier(identifier)
+      input.advance
 
-      _, text = input.peek
+      _, text = current_token
       if text == '.'
-        input.next
         b.symbol('.')
+        input.advance
 
-        _, identifier = input.next
+        _, identifier = current_token
         b.identifier(identifier)
+        input.advance
       end
 
       consume(Tokenizer::SYMBOL, '(')
@@ -192,11 +188,11 @@ class Parser
     b.returnStatement do
       consume(Tokenizer::KEYWORD, 'return')
 
-      _, text = input.peek
+      _, text = current_token
       compile_expression unless text == ';'
 
-      input.next
       b.symbol(';')
+      input.advance
     end
   end
 
@@ -219,17 +215,17 @@ class Parser
 
   def compile_expression_list
     b.expressionList do
-      type, _ = input.peek
+      type, _ = current_token
       while type == Tokenizer::IDENTIFIER
         compile_expression
 
-        _, symbol = input.peek
+        _, symbol = current_token
         if symbol == ','
           b.symbol(',')
-          input.next
+          input.advance
         end
 
-        type, _ = input.peek
+        type, _ = current_token
       end
     end
   end
@@ -242,24 +238,45 @@ class Parser
 
   def compile_term
     b.term do
-      _, identifier = input.next
+      _, identifier = current_token
       b.identifier(identifier)
+      input.advance
     end
   end
 
   private
 
   def consume(expected_type, expected_token)
-    actual_type, actual_token = input.next
+    actual_type, actual_token = current_token
 
     unless actual_type == expected_type && actual_token == expected_token
       raise "expected a #{expected_type} `#{expected_token}`, got #{actual_type} `#{actual_token}`"
     end
 
     b.tag!(expected_type, expected_token)
+
+    input.advance if input.has_more_tokens?
   end
 
   def b
     @builder
+  end
+
+  def current_token
+    type = input.token_type
+    text = case input.token_type
+      when Tokenizer::KEYWORD
+        input.keyword
+      when Tokenizer::SYMBOL
+        input.symbol
+      when Tokenizer::IDENTIFIER
+        input.identifier
+      when Tokenizer::INT_CONST
+        input.int_val
+      when Tokenizer::STRING_CONST
+        input.string_val
+    end
+
+    [type, text]
   end
 end

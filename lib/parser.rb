@@ -16,9 +16,7 @@ class Parser
 
       consume(Tokenizer::KEYWORD, 'class')
 
-      _, identifier = current_token # identifier
-      b.identifier(identifier)
-      input.advance
+      consume(Tokenizer::IDENTIFIER)
 
       consume(Tokenizer::SYMBOL, '{')
 
@@ -40,31 +38,21 @@ class Parser
 
   def compile_class_var_dec
     b.classVarDec do
-      _, keyword = current_token
-      b.keyword(keyword)
-      input.advance
-
-      _, keyword = current_token
-      b.keyword(keyword)
-      input.advance
+      consume(Tokenizer::KEYWORD)
+      consume(Tokenizer::KEYWORD)
 
       begin
-        _, identifier = current_token
-        b.identifier(identifier)
-        input.advance
+        consume(Tokenizer::IDENTIFIER)
 
         _, symbol = current_token
-        b.symbol(symbol)
-        input.advance
+        consume(Tokenizer::SYMBOL)
       end while symbol == ','
     end
   end
 
   def compile_subroutine
     b.subroutineDec do
-      _, keyword = current_token
-      b.keyword(keyword)
-      input.advance
+      consume(Tokenizer::KEYWORD)
 
       type, text = current_token
       case type
@@ -75,9 +63,7 @@ class Parser
       end
       input.advance
 
-      _, identifier = current_token # subroutine name
-      b.identifier(identifier)
-      input.advance
+      consume(Tokenizer::IDENTIFIER) # subroutine name
 
       consume(Tokenizer::SYMBOL, '(')
 
@@ -94,18 +80,12 @@ class Parser
       _, symbol = current_token
 
       until symbol == ')'
-        _, keyword = current_token
-        b.keyword(keyword)
-        input.advance
-
-        _, identifier = current_token
-        b.identifier(identifier)
-        input.advance
+        consume(Tokenizer::KEYWORD)
+        consume(Tokenizer::IDENTIFIER)
 
         _, symbol = current_token
         if symbol == ','
-          b.symbol(',')
-          input.advance
+          consume(Tokenizer::SYMBOL, ',')
         end
       end
     end
@@ -145,9 +125,7 @@ class Parser
     b.letStatement do
       consume(Tokenizer::KEYWORD, 'let')
 
-      _, identifier = current_token
-      b.identifier(identifier)
-      input.advance
+      consume(Tokenizer::IDENTIFIER)
 
       consume(Tokenizer::SYMBOL, '=')
 
@@ -161,18 +139,13 @@ class Parser
     b.doStatement do
       consume(Tokenizer::KEYWORD, 'do')
 
-      _, identifier = current_token
-      b.identifier(identifier)
-      input.advance
+      consume(Tokenizer::IDENTIFIER)
 
       _, text = current_token
       if text == '.'
-        b.symbol('.')
-        input.advance
+        consume(Tokenizer::SYMBOL, '.')
 
-        _, identifier = current_token
-        b.identifier(identifier)
-        input.advance
+        consume(Tokenizer::IDENTIFIER)
       end
 
       consume(Tokenizer::SYMBOL, '(')
@@ -191,8 +164,7 @@ class Parser
       _, text = current_token
       compile_expression unless text == ';'
 
-      b.symbol(';')
-      input.advance
+      consume(Tokenizer::SYMBOL, ';')
     end
   end
 
@@ -221,8 +193,7 @@ class Parser
 
         _, symbol = current_token
         if symbol == ','
-          b.symbol(',')
-          input.advance
+          consume(Tokenizer::SYMBOL, ',')
         end
 
         type, _ = current_token
@@ -238,22 +209,24 @@ class Parser
 
   def compile_term
     b.term do
-      _, identifier = current_token
-      b.identifier(identifier)
-      input.advance
+      consume(Tokenizer::IDENTIFIER)
     end
   end
 
   private
 
-  def consume(expected_type, expected_token)
+  def consume(expected_type, expected_token = nil)
     actual_type, actual_token = current_token
 
-    unless actual_type == expected_type && actual_token == expected_token
-      raise "expected a #{expected_type} `#{expected_token}`, got #{actual_type} `#{actual_token}`"
+    unless actual_type == expected_type && actual_token == (expected_token || actual_token)
+      if expected_token
+        raise "expected a #{expected_type} `#{expected_token}`, got #{actual_type} `#{actual_token}`"
+      else
+        raise "expected any #{expected_type}, got #{actual_type} `#{actual_token}`"
+      end
     end
 
-    b.tag!(expected_type, expected_token)
+    b.tag!(actual_type, actual_token)
 
     input.advance if input.has_more_tokens?
   end

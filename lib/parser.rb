@@ -20,16 +20,12 @@ class Parser
 
       consume(Tokenizer::SYMBOL, '{')
 
-      _, keyword = current_token # 'field' or 'static'
-
-      while %w[field static].include? keyword
+      while %w[field static].include? current_token
         compile_class_var_dec
-        _, keyword = current_token
       end
 
-      while %w[constructor function method].include? keyword
+      while %w[constructor function method].include? current_token
         compile_subroutine
-        _, keyword = current_token
       end
 
       consume(Tokenizer::SYMBOL, '}')
@@ -44,7 +40,7 @@ class Parser
       begin
         consume(Tokenizer::IDENTIFIER)
 
-        _, symbol = current_token
+        symbol = current_token
         consume(Tokenizer::SYMBOL)
       end while symbol == ','
     end
@@ -54,12 +50,11 @@ class Parser
     b.subroutineDec do
       consume(Tokenizer::KEYWORD)
 
-      type, text = current_token
-      case type
+      case current_type
       when Tokenizer::KEYWORD
-        b.keyword(text)
+        b.keyword(current_token)
       when Tokenizer::IDENTIFIER
-        b.identifier(text)
+        b.identifier(current_token)
       end
       input.advance
 
@@ -77,14 +72,11 @@ class Parser
 
   def compile_parameter_list
     b.parameterList do
-      _, symbol = current_token
-
-      until symbol == ')'
+      until current_token == ')'
         consume(Tokenizer::KEYWORD)
         consume(Tokenizer::IDENTIFIER)
 
-        _, symbol = current_token
-        if symbol == ','
+        if current_token == ','
           consume(Tokenizer::SYMBOL, ',')
         end
       end
@@ -104,8 +96,7 @@ class Parser
   def compile_statements
     b.statements do
       loop do
-        _, text = current_token
-        case text
+        case current_token
         when 'let'
           compile_let
         when 'do'
@@ -141,8 +132,7 @@ class Parser
 
       consume(Tokenizer::IDENTIFIER)
 
-      _, text = current_token
-      if text == '.'
+      if current_token == '.'
         consume(Tokenizer::SYMBOL, '.')
 
         consume(Tokenizer::IDENTIFIER)
@@ -161,8 +151,7 @@ class Parser
     b.returnStatement do
       consume(Tokenizer::KEYWORD, 'return')
 
-      _, text = current_token
-      compile_expression unless text == ';'
+      compile_expression unless current_token == ';'
 
       consume(Tokenizer::SYMBOL, ';')
     end
@@ -187,16 +176,12 @@ class Parser
 
   def compile_expression_list
     b.expressionList do
-      type, _ = current_token
-      while type == Tokenizer::IDENTIFIER
+      while current_type == Tokenizer::IDENTIFIER
         compile_expression
 
-        _, symbol = current_token
-        if symbol == ','
+        if current_token == ','
           consume(Tokenizer::SYMBOL, ',')
         end
-
-        type, _ = current_token
       end
     end
   end
@@ -216,17 +201,15 @@ class Parser
   private
 
   def consume(expected_type, expected_token = nil)
-    actual_type, actual_token = current_token
-
-    unless actual_type == expected_type && actual_token == (expected_token || actual_token)
+    unless current_type == expected_type && current_token == (expected_token || current_token)
       if expected_token
-        raise "expected a #{expected_type} `#{expected_token}`, got #{actual_type} `#{actual_token}`"
+        raise "expected a #{expected_type} `#{expected_token}`, got #{current_type} `#{current_token}`"
       else
-        raise "expected any #{expected_type}, got #{actual_type} `#{actual_token}`"
+        raise "expected any #{expected_type}, got #{current_type} `#{current_token}`"
       end
     end
 
-    b.tag!(actual_type, actual_token)
+    b.tag!(current_type, current_token)
 
     input.advance if input.has_more_tokens?
   end
@@ -235,9 +218,12 @@ class Parser
     @builder
   end
 
+  def current_type
+    input.token_type
+  end
+
   def current_token
-    type = input.token_type
-    text = case input.token_type
+    case current_type
       when Tokenizer::KEYWORD
         input.keyword
       when Tokenizer::SYMBOL
@@ -249,7 +235,5 @@ class Parser
       when Tokenizer::STRING_CONST
         input.string_val
     end
-
-    [type, text]
   end
 end

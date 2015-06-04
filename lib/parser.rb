@@ -148,6 +148,7 @@ class Parser
     b.varDec do
       consume(Tokenizer::KEYWORD, 'var')
 
+
       case current_type
       when Tokenizer::KEYWORD
         if %w[int char boolean].include? current_token
@@ -157,9 +158,12 @@ class Parser
         consume(Tokenizer::IDENTIFIER)
       end
 
-      consume(Tokenizer::IDENTIFIER)
+      begin
+        consume(Tokenizer::IDENTIFIER)
 
-      consume(Tokenizer::SYMBOL, ';')
+        last_symbol = current_token
+        consume(Tokenizer::SYMBOL)
+      end until last_symbol == ';'
     end
   end
 
@@ -168,6 +172,14 @@ class Parser
       consume(Tokenizer::KEYWORD, 'let')
 
       consume(Tokenizer::IDENTIFIER)
+
+      if current_token == '['
+        consume(Tokenizer::SYMBOL, '[')
+
+        compile_expression
+
+        consume(Tokenizer::SYMBOL, ']')
+      end
 
       consume(Tokenizer::SYMBOL, '=')
 
@@ -241,7 +253,7 @@ class Parser
     b.expression do
       compile_term
 
-      if %w[+ < & > - ~ =].include? current_token
+      if %w[+ < & > - ~ = /].include? current_token
         consume(Tokenizer::SYMBOL)
         compile_term
       end
@@ -265,8 +277,18 @@ class Parser
         end
       when Tokenizer::INT_CONST
         consume(Tokenizer::INT_CONST)
+      when Tokenizer::STRING_CONST
+        consume(Tokenizer::STRING_CONST)
       else
         consume(Tokenizer::IDENTIFIER)
+
+        if current_token == '['
+          consume(Tokenizer::SYMBOL, '[')
+
+          compile_expression
+
+          consume(Tokenizer::SYMBOL, ']')
+        end
 
         # Possible subroutine calls
         if current_token == '.'

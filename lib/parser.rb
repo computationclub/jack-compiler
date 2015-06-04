@@ -18,17 +18,15 @@ class Parser
 
       consume(Tokenizer::IDENTIFIER)
 
-      consume(Tokenizer::SYMBOL, '{')
+      consume_wrapped('{') do
+        while %w[field static].include? current_token
+          compile_class_var_dec
+        end
 
-      while %w[field static].include? current_token
-        compile_class_var_dec
+        while %w[constructor function method].include? current_token
+          compile_subroutine
+        end
       end
-
-      while %w[constructor function method].include? current_token
-        compile_subroutine
-      end
-
-      consume(Tokenizer::SYMBOL, '}')
     end
   end
 
@@ -68,11 +66,9 @@ class Parser
 
       consume(Tokenizer::IDENTIFIER) # subroutine name
 
-      consume(Tokenizer::SYMBOL, '(')
-
-      compile_parameter_list
-
-      consume(Tokenizer::SYMBOL, ')')
+      consume_wrapped('(') do
+        compile_parameter_list
+      end
 
       compile_subroutine_body
     end
@@ -91,15 +87,13 @@ class Parser
 
   def compile_subroutine_body
     b.subroutineBody do
-      consume(Tokenizer::SYMBOL, '{')
+      consume_wrapped('{') do
+        while current_token == "var"
+          compile_var_dec
+        end
 
-      while current_token == "var"
-        compile_var_dec
+        compile_statements
       end
-
-      compile_statements
-
-      consume(Tokenizer::SYMBOL, '}')
     end
   end
 
@@ -128,17 +122,13 @@ class Parser
     b.whileStatement do
       consume(Tokenizer::KEYWORD, 'while')
 
-      consume(Tokenizer::SYMBOL, '(')
+      consume_wrapped('(') do
+        compile_expression
+      end
 
-      compile_expression
-
-      consume(Tokenizer::SYMBOL, ')')
-
-      consume(Tokenizer::SYMBOL, '{')
-
-      compile_statements
-
-      consume(Tokenizer::SYMBOL, '}')
+      consume_wrapped('{') do
+        compile_statements
+      end
     end
   end
 
@@ -171,9 +161,8 @@ class Parser
 
       consume(Tokenizer::IDENTIFIER)
 
-      if try_consume(Tokenizer::SYMBOL, '[')
+      try_consume_wrapped('[') do
         compile_expression
-        consume(Tokenizer::SYMBOL, ']')
       end
 
       consume(Tokenizer::SYMBOL, '=')
@@ -194,11 +183,10 @@ class Parser
         consume(Tokenizer::IDENTIFIER)
       end
 
-      consume(Tokenizer::SYMBOL, '(')
+      consume_wrapped('(') do
+        compile_expression_list
+      end
 
-      compile_expression_list
-
-      consume(Tokenizer::SYMBOL, ')')
       consume(Tokenizer::SYMBOL, ';')
     end
   end
@@ -216,17 +204,14 @@ class Parser
   def compile_if
     b.ifStatement do
       consume(Tokenizer::KEYWORD, 'if')
-      consume(Tokenizer::SYMBOL, '(')
 
-      compile_expression
+      consume_wrapped('(') do
+        compile_expression
+      end
 
-      consume(Tokenizer::SYMBOL, ')')
-
-      consume(Tokenizer::SYMBOL, '{')
-
-      compile_statements
-
-      consume(Tokenizer::SYMBOL, '}')
+      consume_wrapped('{') do
+        compile_statements
+      end
     end
   end
 
@@ -259,20 +244,19 @@ class Parser
 
       case current_type
       when Tokenizer::SYMBOL
-        if try_consume(Tokenizer::SYMBOL, '(')
-          compile_expression
-          consume(Tokenizer::SYMBOL, ')')
-        elsif %w[- ~].include? current_token
+        if %w[- ~].include? current_token
           # unary op
           consume(Tokenizer::SYMBOL)
           compile_term
+        elsif try_consume_wrapped('(') do
+            compile_expression
+          end
         end
       else
         consume(Tokenizer::IDENTIFIER)
 
-        if try_consume(Tokenizer::SYMBOL, '[')
+        try_consume_wrapped('[') do
           compile_expression
-          consume(Tokenizer::SYMBOL, ']')
         end
 
         # Possible subroutine calls
@@ -280,9 +264,8 @@ class Parser
           consume(Tokenizer::IDENTIFIER)
         end
 
-        if try_consume(Tokenizer::SYMBOL, '(')
+        try_consume_wrapped('(') do
           compile_expression_list
-          consume(Tokenizer::SYMBOL, ')')
         end
       end
     end
@@ -308,6 +291,27 @@ class Parser
 
     input.advance if input.has_more_tokens?
     true
+  end
+
+  def consume_wrapped(opening, &block)
+    unless try_consume_wrapped(opening) { block.call }
+      raise "expected wrapping `#{opening}`, got #{current_type}, `#{current_token}`"
+    end
+  end
+
+  def try_consume_wrapped(opening)
+    closing = case opening
+    when '(' then ')'
+    when '[' then ']'
+    when '{' then '}'
+    else raise "Unknown opening brace: `#{opening}`"
+    end
+
+    if try_consume(Tokenizer::SYMBOL, opening)
+      yield
+      consume(Tokenizer::SYMBOL, closing)
+      true
+    end
   end
 
   def b

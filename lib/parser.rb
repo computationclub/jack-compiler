@@ -241,8 +241,7 @@ class Parser
     b.expression do
       compile_term
 
-      case current_token
-      when '+', '<', '&', '>', '-'
+      if %w[+ < & > - ~ =].include? current_token
         consume(Tokenizer::SYMBOL)
         compile_term
       end
@@ -259,6 +258,10 @@ class Parser
           consume(Tokenizer::SYMBOL, '(')
           compile_expression
           consume(Tokenizer::SYMBOL, ')')
+        elsif %w[- ~].include? current_token
+          # unary op
+          consume(Tokenizer::SYMBOL)
+          compile_term
         end
       when Tokenizer::INT_CONST
         consume(Tokenizer::INT_CONST)

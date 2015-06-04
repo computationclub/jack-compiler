@@ -35,7 +35,15 @@ class Parser
   def compile_class_var_dec
     b.classVarDec do
       consume(Tokenizer::KEYWORD)
-      consume(Tokenizer::KEYWORD)
+
+      case current_type
+      when Tokenizer::KEYWORD
+        if %w[int char boolean].include? current_token
+          consume(Tokenizer::KEYWORD)
+        end
+      else
+        consume(Tokenizer::IDENTIFIER)
+      end
 
       begin
         consume(Tokenizer::IDENTIFIER)
@@ -109,6 +117,8 @@ class Parser
           compile_return
         when 'if'
           compile_if
+        when 'while'
+          compile_while
         else
           break
         end
@@ -116,11 +126,36 @@ class Parser
     end
   end
 
+  def compile_while
+    b.whileStatement do
+      consume(Tokenizer::KEYWORD, 'while')
+
+      consume(Tokenizer::SYMBOL, '(')
+
+      compile_expression
+
+      consume(Tokenizer::SYMBOL, ')')
+
+      consume(Tokenizer::SYMBOL, '{')
+
+      compile_statements
+
+      consume(Tokenizer::SYMBOL, '}')
+    end
+  end
+
   def compile_var_dec
     b.varDec do
       consume(Tokenizer::KEYWORD, 'var')
 
-      consume(Tokenizer::IDENTIFIER)
+      case current_type
+      when Tokenizer::KEYWORD
+        if %w[int char boolean].include? current_token
+          consume(Tokenizer::KEYWORD)
+        end
+      else
+        consume(Tokenizer::IDENTIFIER)
+      end
 
       consume(Tokenizer::IDENTIFIER)
 

@@ -4381,6 +4381,159 @@ class Main {
     difftest(input, expected)
   end
 
+  it "parses the remaining grammar" do
+    input =<<-EOJACK
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/10/ArrayTest/Main.jack
+
+/** Computes the average of a sequence of integers. */
+class Main {
+    function void main() {
+      // This is nonsense just to test extra things
+      if (i < 4) {
+        let i = i * a[-2];
+        return false;
+      } else {
+        let i = -i | 4 + 1;
+        let i = this / null;
+        return true;
+      }
+    }
+}
+    EOJACK
+
+    expected =<<-EOXML
+<class>
+  <keyword> class </keyword>
+  <identifier> Main </identifier>
+  <symbol> { </symbol>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> void </keyword>
+    <identifier> main </identifier>
+    <symbol> ( </symbol>
+    <parameterList>
+    </parameterList>
+    <symbol> ) </symbol>
+    <subroutineBody>
+      <symbol> { </symbol>
+      <statements>
+        <ifStatement>
+          <keyword> if </keyword>
+          <symbol> ( </symbol>
+          <expression>
+            <term>
+              <identifier> i </identifier>
+            </term>
+            <symbol> &lt; </symbol>
+            <term>
+              <int_const> 4 </int_const>
+            </term>
+          </expression>
+          <symbol> ) </symbol>
+          <symbol> { </symbol>
+          <statements>
+            <letStatement>
+              <keyword> let </keyword>
+              <identifier> i </identifier>
+              <symbol> = </symbol>
+              <expression>
+                <term>
+                  <identifier> i </identifier>
+                </term>
+                <symbol> * </symbol>
+                <term>
+                  <identifier> a </identifier>
+                  <symbol> [ </symbol>
+                  <expression>
+                    <term>
+                      <symbol> - </symbol>
+                      <term>
+                        <int_const> 2 </int_const>
+                      </term>
+                    </term>
+                  </expression>
+                  <symbol> ] </symbol>
+                </term>
+              </expression>
+              <symbol> ; </symbol>
+            </letStatement>
+            <returnStatement>
+              <keyword>return</keyword>
+              <expression>
+                <term>
+                  <keyword>false</keyword>
+                </term>
+              </expression>
+              <symbol> ; </symbol>
+            </returnStatement>
+          </statements>
+          <symbol> } </symbol>
+          <keyword> else </keyword>
+          <symbol> { </symbol>
+            <statements>
+              <letStatement>
+                <keyword> let </keyword>
+                <identifier> i </identifier>
+                <symbol> = </symbol>
+                <expression>
+                  <term>
+                    <symbol> - </symbol>
+                    <term>
+                      <identifier> i </identifier>
+                    </term>
+                  </term>
+                  <symbol> | </symbol>
+                  <term>
+                    <int_const> 4 </int_const>
+                  </term>
+                  <symbol> + </symbol>
+                  <term>
+                    <int_const> 1 </int_const>
+                  </term>
+                </expression>
+                <symbol> ; </symbol>
+              </letStatement>
+              <letStatement>
+                <keyword> let </keyword>
+                <identifier> i </identifier>
+                <symbol> = </symbol>
+                <expression>
+                  <term>
+                    <keyword> this </keyword>
+                  </term>
+                  <symbol> / </symbol>
+                  <term>
+                    <keyword> null </keyword>
+                  </term>
+                </expression>
+                <symbol> ; </symbol>
+              </letStatement>
+              <returnStatement>
+                <keyword>return</keyword>
+                <expression>
+                  <term>
+                    <keyword>true</keyword>
+                  </term>
+                </expression>
+                <symbol> ; </symbol>
+              </returnStatement>
+            </statements>
+          <symbol> } </symbol>
+        </ifStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <symbol> } </symbol>
+</class>
+    EOXML
+
+    difftest(input, expected)
+  end
+
   def difftest(input, expected)
     tokenizer = Tokenizer.new(input)
     actual = StringIO.new

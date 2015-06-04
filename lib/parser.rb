@@ -34,21 +34,13 @@ class Parser
     b.classVarDec do
       consume(Tokenizer::KEYWORD)
 
-      case current_type
-      when Tokenizer::KEYWORD
-        if %w[int char boolean].include? current_token
-          consume(Tokenizer::KEYWORD)
-        end
-      else
+      consume_type
+
+      consume_seperated(',') do
         consume(Tokenizer::IDENTIFIER)
       end
 
-      begin
-        consume(Tokenizer::IDENTIFIER)
-
-        symbol = current_token
-        consume(Tokenizer::SYMBOL)
-      end while symbol == ','
+      consume(Tokenizer::SYMBOL, ';')
     end
   end
 
@@ -56,13 +48,7 @@ class Parser
     b.subroutineDec do
       consume(Tokenizer::KEYWORD)
 
-      case current_type
-      when Tokenizer::KEYWORD
-        b.keyword(current_token)
-      when Tokenizer::IDENTIFIER
-        b.identifier(current_token)
-      end
-      input.advance
+      try_consume(Tokenizer::KEYWORD, 'void') || consume_type
 
       consume(Tokenizer::IDENTIFIER) # subroutine name
 
@@ -76,11 +62,11 @@ class Parser
 
   def compile_parameter_list
     b.parameterList do
-      until current_token == ')'
-        consume(Tokenizer::KEYWORD)
-        consume(Tokenizer::IDENTIFIER)
+      return if current_token == ')'
 
-        try_consume(Tokenizer::SYMBOL, ',')
+      consume_seperated(',') do
+        consume_type
+        consume(Tokenizer::IDENTIFIER)
       end
     end
   end
@@ -136,22 +122,13 @@ class Parser
     b.varDec do
       consume(Tokenizer::KEYWORD, 'var')
 
+      consume_type
 
-      case current_type
-      when Tokenizer::KEYWORD
-        if %w[int char boolean].include? current_token
-          consume(Tokenizer::KEYWORD)
-        end
-      else
+      consume_seperated(',') do
         consume(Tokenizer::IDENTIFIER)
       end
 
-      begin
-        consume(Tokenizer::IDENTIFIER)
-
-        last_symbol = current_token
-        consume(Tokenizer::SYMBOL)
-      end until last_symbol == ';'
+      consume(Tokenizer::SYMBOL, ';')
     end
   end
 
@@ -177,15 +154,7 @@ class Parser
     b.doStatement do
       consume(Tokenizer::KEYWORD, 'do')
 
-      consume(Tokenizer::IDENTIFIER)
-
-      if try_consume(Tokenizer::SYMBOL, '.')
-        consume(Tokenizer::IDENTIFIER)
-      end
-
-      consume_wrapped('(') do
-        compile_expression_list
-      end
+      consume_subroutine_call
 
       consume(Tokenizer::SYMBOL, ';')
     end
@@ -212,15 +181,21 @@ class Parser
       consume_wrapped('{') do
         compile_statements
       end
+
+      if try_consume(Tokenizer::KEYWORD, 'else')
+        consume_wrapped('{') do
+          compile_statements
+        end
+      end
     end
   end
 
   def compile_expression_list
     b.expressionList do
-      until current_token == ')'
-        compile_expression
+      return if  current_token == ')'
 
-        try_consume(Tokenizer::SYMBOL, ',')
+      consume_seperated(',') do
+        compile_expression
       end
     end
   end
@@ -229,7 +204,7 @@ class Parser
     b.expression do
       compile_term
 
-      if %w[+ < & > - ~ = /].include? current_token
+      while %w[+ - * / & | < > =].include? current_token
         consume(Tokenizer::SYMBOL)
         compile_term
       end
@@ -238,34 +213,26 @@ class Parser
 
   def compile_term
     b.term do
-      return if try_consume(Tokenizer::KEYWORD) ||
-                try_consume(Tokenizer::INT_CONST) ||
-                try_consume(Tokenizer::STRING_CONST)
+      return if try_consume(Tokenizer::INT_CONST) ||
+                try_consume(Tokenizer::STRING_CONST) ||
+                try_consume_wrapped('(') { compile_expression }
 
-      case current_type
-      when Tokenizer::SYMBOL
-        if %w[- ~].include? current_token
-          # unary op
-          consume(Tokenizer::SYMBOL)
-          compile_term
-        elsif try_consume_wrapped('(') do
-            compile_expression
-          end
-        end
+      case current_token
+      when 'true', 'false', 'null', 'this' #keywordConst
+        consume(Tokenizer::KEYWORD)
+      when '-', '~' # unary op
+        consume(Tokenizer::SYMBOL)
+        compile_term
       else
         consume(Tokenizer::IDENTIFIER)
 
-        try_consume_wrapped('[') do
-          compile_expression
-        end
-
-        # Possible subroutine calls
-        if try_consume(Tokenizer::SYMBOL, '.')
-          consume(Tokenizer::IDENTIFIER)
-        end
-
-        try_consume_wrapped('(') do
-          compile_expression_list
+        case current_token
+        when '['
+          consume_wrapped('[') do
+            compile_expression
+          end
+        when '.', '('
+          consume_subroutine_call(skip_identifier: true)
         end
       end
     end
@@ -334,6 +301,35 @@ class Parser
         input.int_val
       when Tokenizer::STRING_CONST
         input.string_val
+    end
+  end
+
+  def consume_seperated(sep)
+    begin
+      yield
+    end while try_consume(Tokenizer::SYMBOL, sep)
+  end
+
+  def consume_type
+    case current_type
+    when Tokenizer::KEYWORD
+      if %w[int char boolean].include? current_token
+        consume(Tokenizer::KEYWORD)
+      end
+    else
+      consume(Tokenizer::IDENTIFIER)
+    end
+  end
+
+  def consume_subroutine_call(skip_identifier: false)
+    consume(Tokenizer::IDENTIFIER) unless skip_identifier
+
+    if try_consume(Tokenizer::SYMBOL, '.')
+      consume(Tokenizer::IDENTIFIER)
+    end
+
+    consume_wrapped('(') do
+      compile_expression_list
     end
   end
 end

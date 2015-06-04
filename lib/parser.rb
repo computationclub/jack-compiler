@@ -227,7 +227,7 @@ class Parser
 
   def compile_expression_list
     b.expressionList do
-      while current_type == Tokenizer::IDENTIFIER
+      until current_token == ')'
         compile_expression
 
         if current_token == ','
@@ -240,26 +240,45 @@ class Parser
   def compile_expression
     b.expression do
       compile_term
+
+      case current_token
+      when '+', '<', '&', '>', '-'
+        consume(Tokenizer::SYMBOL)
+        compile_term
+      end
     end
   end
 
   def compile_term
     b.term do
-      consume(Tokenizer::IDENTIFIER)
-
-      # Possible subroutine calls
-      if current_token == '.'
-        consume(Tokenizer::SYMBOL, '.')
-
+      case current_type
+      when Tokenizer::KEYWORD
+        consume(Tokenizer::KEYWORD)
+      when Tokenizer::SYMBOL
+        if current_token == '('
+          consume(Tokenizer::SYMBOL, '(')
+          compile_expression
+          consume(Tokenizer::SYMBOL, ')')
+        end
+      when Tokenizer::INT_CONST
+        consume(Tokenizer::INT_CONST)
+      else
         consume(Tokenizer::IDENTIFIER)
-      end
 
-      if current_token == '('
-        consume(Tokenizer::SYMBOL, '(')
+        # Possible subroutine calls
+        if current_token == '.'
+          consume(Tokenizer::SYMBOL, '.')
 
-        compile_expression_list
+          consume(Tokenizer::IDENTIFIER)
+        end
 
-        consume(Tokenizer::SYMBOL, ')')
+        if current_token == '('
+          consume(Tokenizer::SYMBOL, '(')
+
+          compile_expression_list
+
+          consume(Tokenizer::SYMBOL, ')')
+        end
       end
     end
   end

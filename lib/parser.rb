@@ -246,6 +246,21 @@ class Parser
   def compile_term
     b.term do
       consume(Tokenizer::IDENTIFIER)
+
+      # Possible subroutine calls
+      if current_token == '.'
+        consume(Tokenizer::SYMBOL, '.')
+
+        consume(Tokenizer::IDENTIFIER)
+      end
+
+      if current_token == '('
+        consume(Tokenizer::SYMBOL, '(')
+
+        compile_expression_list
+
+        consume(Tokenizer::SYMBOL, ')')
+      end
     end
   end
 

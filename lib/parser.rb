@@ -87,6 +87,10 @@ class Parser
     b.subroutineBody do
       consume(Tokenizer::SYMBOL, '{')
 
+      while current_token == "var"
+        compile_var_dec
+      end
+
       compile_statements
 
       consume(Tokenizer::SYMBOL, '}')
@@ -109,6 +113,18 @@ class Parser
           break
         end
       end
+    end
+  end
+
+  def compile_var_dec
+    b.varDec do
+      consume(Tokenizer::KEYWORD, 'var')
+
+      consume(Tokenizer::IDENTIFIER)
+
+      consume(Tokenizer::IDENTIFIER)
+
+      consume(Tokenizer::SYMBOL, ';')
     end
   end
 

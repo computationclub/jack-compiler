@@ -2,7 +2,7 @@ require 'parser'
 require 'tokenizer'
 
 RSpec.describe "Parser" do
-  it "parses" do
+  it "parses ExpressionlessSquare::Square" do
     input =<<-EOJACK
 // This file is part of www.nand2tetris.org
 // and the book "The Elements of Computing Systems"
@@ -1095,14 +1095,123 @@ class Square {
 </class>
     EOXML
 
+    difftest(input, expected)
+  end
+
+  it "parses ExpressionlessSquare::Main" do
+    input =<<-EOJACK
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/10/ExpressionlessSquare/Main.jack
+
+// Expressionless version of Main.jack.
+
+/**
+ * The Main class initializes a new Square Dance game and starts it.
+ */
+class Main {
+
+    // Initializes the square game and starts it.
+    function void main() {
+        var SquareGame game;
+
+        let game = game;
+        do game.run();
+    do game.dispose();
+
+        return;
+    }
+}
+    EOJACK
+
+    expected =<<-EOXML
+<class>
+  <keyword> class </keyword>
+  <identifier> Main </identifier>
+  <symbol> { </symbol>
+  <subroutineDec>
+    <keyword> function </keyword>
+    <keyword> void </keyword>
+    <identifier> main </identifier>
+    <symbol> ( </symbol>
+    <parameterList>
+    </parameterList>
+    <symbol> ) </symbol>
+    <subroutineBody>
+      <symbol> { </symbol>
+      <varDec>
+        <keyword> var </keyword>
+        <identifier> SquareGame </identifier>
+        <identifier> game </identifier>
+        <symbol> ; </symbol>
+      </varDec>
+      <statements>
+        <letStatement>
+          <keyword> let </keyword>
+          <identifier> game </identifier>
+          <symbol> = </symbol>
+          <expression>
+            <term>
+              <identifier> game </identifier>
+            </term>
+          </expression>
+          <symbol> ; </symbol>
+        </letStatement>
+        <doStatement>
+          <keyword> do </keyword>
+          <identifier> game </identifier>
+          <symbol> . </symbol>
+          <identifier> run </identifier>
+          <symbol> ( </symbol>
+          <expressionList>
+          </expressionList>
+          <symbol> ) </symbol>
+          <symbol> ; </symbol>
+        </doStatement>
+        <doStatement>
+          <keyword> do </keyword>
+          <identifier> game </identifier>
+          <symbol> . </symbol>
+          <identifier> dispose </identifier>
+          <symbol> ( </symbol>
+          <expressionList>
+          </expressionList>
+          <symbol> ) </symbol>
+          <symbol> ; </symbol>
+        </doStatement>
+        <returnStatement>
+          <keyword> return </keyword>
+          <symbol> ; </symbol>
+        </returnStatement>
+      </statements>
+      <symbol> } </symbol>
+    </subroutineBody>
+  </subroutineDec>
+  <symbol> } </symbol>
+</class>
+    EOXML
+
+    difftest(input, expected)
+  end
+
+  def difftest(input, expected)
     tokenizer = Tokenizer.new(input)
     actual = StringIO.new
 
     parser = Parser.new(tokenizer, actual)
-    parser.compile_class
+    begin
+      parser.compile_class
+    rescue
+      puts nil, actual.string, nil
+      raise
+    end
 
     actual.string.lines.zip(expected.lines) do |a, e|
-      expect(a).to eq(e)
+      e.gsub!(/>\s+/, ">")
+      e.gsub!(/\s+</, "<")
+      a.strip!
+      expect(a).to eq(e), "'#{a}' != '#{e}' in: #{actual.string}"
     end
   end
 end

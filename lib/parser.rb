@@ -84,9 +84,7 @@ class Parser
         consume(Tokenizer::KEYWORD)
         consume(Tokenizer::IDENTIFIER)
 
-        if current_token == ','
-          consume(Tokenizer::SYMBOL, ',')
-        end
+        try_consume(Tokenizer::SYMBOL, ',')
       end
     end
   end
@@ -173,11 +171,8 @@ class Parser
 
       consume(Tokenizer::IDENTIFIER)
 
-      if current_token == '['
-        consume(Tokenizer::SYMBOL, '[')
-
+      if try_consume(Tokenizer::SYMBOL, '[')
         compile_expression
-
         consume(Tokenizer::SYMBOL, ']')
       end
 
@@ -195,9 +190,7 @@ class Parser
 
       consume(Tokenizer::IDENTIFIER)
 
-      if current_token == '.'
-        consume(Tokenizer::SYMBOL, '.')
-
+      if try_consume(Tokenizer::SYMBOL, '.')
         consume(Tokenizer::IDENTIFIER)
       end
 
@@ -242,9 +235,7 @@ class Parser
       until current_token == ')'
         compile_expression
 
-        if current_token == ','
-          consume(Tokenizer::SYMBOL, ',')
-        end
+        try_consume(Tokenizer::SYMBOL, ',')
       end
     end
   end
@@ -262,12 +253,13 @@ class Parser
 
   def compile_term
     b.term do
+      return if try_consume(Tokenizer::KEYWORD) ||
+                try_consume(Tokenizer::INT_CONST) ||
+                try_consume(Tokenizer::STRING_CONST)
+
       case current_type
-      when Tokenizer::KEYWORD
-        consume(Tokenizer::KEYWORD)
       when Tokenizer::SYMBOL
-        if current_token == '('
-          consume(Tokenizer::SYMBOL, '(')
+        if try_consume(Tokenizer::SYMBOL, '(')
           compile_expression
           consume(Tokenizer::SYMBOL, ')')
         elsif %w[- ~].include? current_token
@@ -275,33 +267,21 @@ class Parser
           consume(Tokenizer::SYMBOL)
           compile_term
         end
-      when Tokenizer::INT_CONST
-        consume(Tokenizer::INT_CONST)
-      when Tokenizer::STRING_CONST
-        consume(Tokenizer::STRING_CONST)
       else
         consume(Tokenizer::IDENTIFIER)
 
-        if current_token == '['
-          consume(Tokenizer::SYMBOL, '[')
-
+        if try_consume(Tokenizer::SYMBOL, '[')
           compile_expression
-
           consume(Tokenizer::SYMBOL, ']')
         end
 
         # Possible subroutine calls
-        if current_token == '.'
-          consume(Tokenizer::SYMBOL, '.')
-
+        if try_consume(Tokenizer::SYMBOL, '.')
           consume(Tokenizer::IDENTIFIER)
         end
 
-        if current_token == '('
-          consume(Tokenizer::SYMBOL, '(')
-
+        if try_consume(Tokenizer::SYMBOL, '(')
           compile_expression_list
-
           consume(Tokenizer::SYMBOL, ')')
         end
       end
@@ -311,17 +291,23 @@ class Parser
   private
 
   def consume(expected_type, expected_token = nil)
-    unless current_type == expected_type && current_token == (expected_token || current_token)
+    unless try_consume(expected_type, expected_token)
       if expected_token
         raise "expected a #{expected_type} `#{expected_token}`, got #{current_type} `#{current_token}`"
       else
         raise "expected any #{expected_type}, got #{current_type} `#{current_token}`"
       end
     end
+  end
+
+  def try_consume(expected_type, expected_token = nil)
+    return false unless current_type == expected_type &&
+                        current_token == (expected_token || current_token)
 
     b.tag!(current_type, current_token)
 
     input.advance if input.has_more_tokens?
+    true
   end
 
   def b

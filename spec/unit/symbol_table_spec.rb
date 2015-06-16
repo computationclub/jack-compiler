@@ -4,7 +4,7 @@ RSpec.describe SymbolTable do
   let(:table) { SymbolTable.new }
 
   describe "#start_subroutine" do
-
+    pending "not needed yet"
   end
 
   describe "#define" do
@@ -38,7 +38,7 @@ RSpec.describe SymbolTable do
 
   describe "#type_of" do
     it "raises an error when the symbol is undefined" do
-      expect{ table.type_of("foo") }.to raise_error(SymbolTable::SymbolNotFound)
+      expect { table.type_of("foo") }.to raise_error(SymbolTable::SymbolNotFound)
     end
 
     it "returns the type of the given symbol, when defined" do
@@ -48,6 +48,22 @@ RSpec.describe SymbolTable do
   end
 
   describe "#index_of" do
+    it "returns 0 for the first symbol of its kind" do
+      table.define("nAccounts", "int", :static)
+      expect(table.index_of("nAccounts")).to eq(0)
+    end
 
+    it "returns 1 for the second symbol of its kind" do
+      table.define("nAccounts", "int", :static)
+      table.define("bankCommission", "int", :static)
+      expect(table.index_of("bankCommission")).to eq(1)
+    end
+
+    it "doesn't increment the index of other kinds" do
+      table.define("nAccounts", "int", :static)
+      table.define("bankCommission", "int", :static)
+      table.define("foo", "int", :field)
+      expect(table.index_of("foo")).to eq(0)
+    end
   end
 end

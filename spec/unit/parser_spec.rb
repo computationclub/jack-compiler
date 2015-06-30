@@ -1,7 +1,7 @@
 require 'parser'
 require 'tokenizer'
 
-RSpec.describe "Parser" do
+RSpec.describe "Parser", :pending do
   it "parses ExpressionlessSquare::Square" do
     input =<<-EOJACK
 // This file is part of www.nand2tetris.org

@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+
+require 'bundler/setup'
+
+require_relative '../lib/parser'
+require_relative '../lib/tokenizer'
+
+ARGV.each do |filename|
+  input = File.read(filename)
+  tokenizer = Tokenizer.new(input)
+  parser = Parser.new(tokenizer, STDOUT)
+  parser.compile_class
+end

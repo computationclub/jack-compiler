@@ -1,15 +1,17 @@
 require 'builder'
+require_relative 'symbol_table'
 
 class Parser
   attr_reader :input
 
   def initialize(input, output)
     @input = input
-
     @builder = Builder::XmlMarkup.new(target: output, indent: 2)
   end
 
   def compile_class
+    @symbols = SymbolTable.new
+
     b.tag!(:class) do
       # Get the ball moving!
       input.advance
@@ -32,12 +34,16 @@ class Parser
 
   def compile_class_var_dec
     b.classVarDec do
+      kind = current_token # field, static, etc.
       consume(Tokenizer::KEYWORD)
 
+      type = current_token # int, char, etc.
       consume_type
 
-      consume_seperated(',') do
-        consume(Tokenizer::IDENTIFIER)
+      consume_separated(',') do
+        name = current_token
+        @symbols.define(name, type, kind)
+        consume_identifier(name)
       end
 
       consume(Tokenizer::SYMBOL, ';')
@@ -45,12 +51,14 @@ class Parser
   end
 
   def compile_subroutine
+    @symbols.start_subroutine
+
     b.subroutineDec do
       consume(Tokenizer::KEYWORD)
 
       try_consume(Tokenizer::KEYWORD, 'void') || consume_type
 
-      consume(Tokenizer::IDENTIFIER) # subroutine name
+      consume(Tokenizer::IDENTIFIER)
 
       consume_wrapped('(') do
         compile_parameter_list
@@ -64,9 +72,15 @@ class Parser
     b.parameterList do
       return if current_token == ')'
 
-      consume_seperated(',') do
+      consume_separated(',') do
+        kind = :arg
+
+        type = current_token # int, char, etc.
         consume_type
-        consume(Tokenizer::IDENTIFIER)
+
+        name = current_token
+        @symbols.define(name, type, kind)
+        consume_identifier(name)
       end
     end
   end
@@ -122,10 +136,15 @@ class Parser
     b.varDec do
       consume(Tokenizer::KEYWORD, 'var')
 
+      kind = :var
+
+      type = current_token
       consume_type
 
-      consume_seperated(',') do
-        consume(Tokenizer::IDENTIFIER)
+      consume_separated(',') do
+        name = current_token
+        @symbols.define(name, type, kind)
+        consume_identifier(name)
       end
 
       consume(Tokenizer::SYMBOL, ';')
@@ -136,7 +155,7 @@ class Parser
     b.letStatement do
       consume(Tokenizer::KEYWORD, 'let')
 
-      consume(Tokenizer::IDENTIFIER)
+      consume_identifier
 
       try_consume_wrapped('[') do
         compile_expression
@@ -194,7 +213,7 @@ class Parser
     b.expressionList do
       return if  current_token == ')'
 
-      consume_seperated(',') do
+      consume_separated(',') do
         compile_expression
       end
     end
@@ -224,15 +243,31 @@ class Parser
         consume(Tokenizer::SYMBOL)
         compile_term
       else
-        consume(Tokenizer::IDENTIFIER)
+        name = current_token
+        input.advance
 
         case current_token
         when '['
+          b.identifier(
+            name,
+            type: @symbols.type_of(name),
+            kind: @symbols.kind_of(name),
+            index: @symbols.index_of(name)
+          )
+
           consume_wrapped('[') do
             compile_expression
           end
         when '.', '('
+          b.identifier(name)
           consume_subroutine_call(skip_identifier: true)
+        else
+          b.identifier(
+            name,
+            type: @symbols.type_of(name),
+            kind: @symbols.kind_of(name),
+            index: @symbols.index_of(name)
+          )
         end
       end
     end
@@ -258,6 +293,17 @@ class Parser
 
     input.advance if input.has_more_tokens?
     true
+  end
+
+  def consume_identifier(name = current_token)
+    b.identifier(
+      name,
+      type: @symbols.type_of(name),
+      kind: @symbols.kind_of(name),
+      index: @symbols.index_of(name)
+    )
+
+    input.advance if input.has_more_tokens?
   end
 
   def consume_wrapped(opening, &block)
@@ -304,7 +350,7 @@ class Parser
     end
   end
 
-  def consume_seperated(sep)
+  def consume_separated(sep)
     begin
       yield
     end while try_consume(Tokenizer::SYMBOL, sep)

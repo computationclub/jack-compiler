@@ -4,7 +4,19 @@ RSpec.describe SymbolTable do
   let(:table) { SymbolTable.new }
 
   describe "#start_subroutine" do
-    pending "not needed yet"
+    it "resets the subroutine symbol table" do
+      table.define("nAccounts", "int", :static)
+      table.define("id", "int", :field)
+      table.define("this", "BankAccount", :arg)
+      table.define("i", "int", :var)
+
+      table.start_subroutine
+
+      expect(table.var_count(:static)).to eq(1)
+      expect(table.var_count(:field)).to eq(1)
+      expect(table.var_count(:arg)).to be_zero
+      expect(table.var_count(:var)).to be_zero
+    end
   end
 
   describe "#define" do

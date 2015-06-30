@@ -14,8 +14,12 @@ class SymbolTable
     @symbols[name] = Symbol.new(name, type, kind, index)
   end
 
+  def start_subroutine
+    @symbols.delete_if { |_, v| [:arg, :var].include? v.kind }
+  end
+
   def var_count(kind)
-    @symbols.select { |_, v| v.kind == kind }.count
+    @symbols.count { |_, v| v.kind == kind }
   end
 
   def kind_of(name)

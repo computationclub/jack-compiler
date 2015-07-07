@@ -14,6 +14,10 @@ class VMWriter
     io.puts("pop #{segment} #{index}")
   end
 
+  def write_operation(operation)
+    write_arithmetic({ '+' => 'add' }.fetch(operation))
+  end
+
   def write_arithmetic(command)
     io.puts(command)
   end

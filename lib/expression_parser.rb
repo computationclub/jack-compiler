@@ -13,6 +13,14 @@ class ExpressionParser
     end
   end
 
+  BinaryOperation = Struct.new(:operation, :left_node, :right_node) do
+    def emit(vm_writer, symbol_table)
+      left_node.emit(vm_writer, symbol_table)
+      right_node.emit(vm_writer, symbol_table)
+      vm_writer.write_operation(operation)
+    end
+  end
+
   attr_reader :tokenizer
   private :tokenizer
 
@@ -21,15 +29,30 @@ class ExpressionParser
   end
 
   def parse
-    case tokenizer.token_type
+    left_node = case tokenizer.token_type
     when Tokenizer::INT_CONST
       number = tokenizer.int_val
 
       Number.new(number)
-    else
+    when Tokenizer::IDENTIFIER
       identifier = tokenizer.identifier
 
       Variable.new(identifier)
+    end
+
+    return left_node unless tokenizer.has_more_tokens?
+
+    tokenizer.advance
+
+    if %w[+ - * / & | < > =].include?(tokenizer.symbol)
+      operation = tokenizer.symbol
+      tokenizer.advance
+
+      right_node = parse
+
+      BinaryOperation.new(operation, left_node, right_node)
+    else
+      left_node
     end
   end
 end

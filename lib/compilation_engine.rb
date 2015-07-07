@@ -7,11 +7,10 @@ class CompilationEngine
   def initialize(input, output)
     @input = input
     @vm_writer = VMWriter.new(output)
+    @symbols = SymbolTable.new
   end
 
   def compile_class
-    @symbols = SymbolTable.new
-
     # b.tag!(:class) do
       # Get the ball moving!
       input.advance

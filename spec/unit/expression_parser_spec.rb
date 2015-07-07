@@ -134,4 +134,22 @@ push constant 1
 neg
     VM
   end
+
+  it 'emits VM code for multiplication' do
+    tokenizer = Tokenizer.new('1 * 2')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push constant 1
+push constant 2
+call Math.multiply 2
+    VM
+  end
 end

@@ -15,7 +15,16 @@ class VMWriter
   end
 
   def write_operation(operation)
-    write_arithmetic({ '+' => 'add', '-' => 'neg', '~' => 'not' }.fetch(operation))
+    case operation
+    when '+'
+      write_arithmetic('add')
+    when '-'
+      write_arithmetic('neg')
+    when '~'
+      write_arithmetic('not')
+    when '*'
+      write_call('Math.multiply', 2)
+    end
   end
 
   def write_arithmetic(command)

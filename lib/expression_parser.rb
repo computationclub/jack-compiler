@@ -38,6 +38,15 @@ class ExpressionParser
       identifier = tokenizer.identifier
 
       Variable.new(identifier)
+    when Tokenizer::SYMBOL
+      fail 'Not an opening parenthesis' unless tokenizer.symbol == '('
+      tokenizer.advance
+
+      node = parse
+
+      fail 'Not a closing parenthesis' unless tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')'
+
+      node
     end
 
     return left_node unless tokenizer.has_more_tokens?

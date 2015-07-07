@@ -79,4 +79,24 @@ add
 add
     VM
   end
+
+  it 'emits VM code for compound binary expressions with parentheses' do
+    tokenizer = Tokenizer.new('(1 + 2) + 3')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push constant 1
+push constant 2
+add
+push constant 3
+add
+    VM
+  end
 end

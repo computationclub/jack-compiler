@@ -114,6 +114,23 @@ add
 
     expect(output.string).to eq(<<-VM)
 push static 0
+not
+    VM
+  end
+
+  it 'emits VM code for keywords' do
+    tokenizer = Tokenizer.new('true')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push constant 1
 neg
     VM
   end

@@ -28,6 +28,18 @@ class ExpressionParser
     end
   end
 
+  Keyword = Struct.new(:value) do
+    def emit(vm_writer, symbol_table)
+      case value
+      when 'true'
+        vm_writer.write_push('constant', '1')
+        vm_writer.write_arithmetic('neg')
+      when 'null', 'false'
+        vm_writer.write_push('constant', '0')
+      end
+    end
+  end
+
   attr_reader :tokenizer
   private :tokenizer
 
@@ -45,6 +57,10 @@ class ExpressionParser
       identifier = tokenizer.identifier
 
       Variable.new(identifier)
+    when Tokenizer::KEYWORD
+      keyword = tokenizer.keyword
+
+      Keyword.new(keyword)
     when Tokenizer::SYMBOL
       case tokenizer.symbol
       when '('

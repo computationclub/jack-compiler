@@ -99,4 +99,22 @@ push constant 3
 add
     VM
   end
+
+  it 'emits VM code for unary operations' do
+    tokenizer = Tokenizer.new('~a')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+    symbol_table.define('a', :int, :static)
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push static 0
+neg
+    VM
+  end
 end

@@ -21,6 +21,13 @@ class ExpressionParser
     end
   end
 
+  UnaryOperation = Struct.new(:operation, :expression) do
+    def emit(vm_writer, symbol_table)
+      expression.emit(vm_writer, symbol_table)
+      vm_writer.write_operation(operation)
+    end
+  end
+
   attr_reader :tokenizer
   private :tokenizer
 
@@ -39,14 +46,12 @@ class ExpressionParser
 
       Variable.new(identifier)
     when Tokenizer::SYMBOL
-      fail 'Not an opening parenthesis' unless tokenizer.symbol == '('
-      tokenizer.advance
-
-      node = parse
-
-      fail 'Not a closing parenthesis' unless tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')'
-
-      node
+      case tokenizer.symbol
+      when '('
+        parse_nested_expression
+      else
+        parse_unary_operation
+      end
     end
 
     return left_node unless tokenizer.has_more_tokens?
@@ -63,5 +68,25 @@ class ExpressionParser
     else
       left_node
     end
+  end
+
+  def parse_unary_operation
+    fail 'Not a supported unary operation' unless %w(- ~).include?(tokenizer.symbol)
+    operation = tokenizer.symbol
+    tokenizer.advance
+    expression = parse
+
+    UnaryOperation.new(operation, expression)
+  end
+
+  def parse_nested_expression
+    fail 'Not an opening parenthesis' unless tokenizer.symbol == '('
+    tokenizer.advance
+
+    node = parse
+
+    fail 'Not a closing parenthesis' unless tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')'
+
+    node
   end
 end

@@ -230,7 +230,7 @@ class CompilationEngine
   end
 
   def compile_expression
-    expression = ExpressionParser.new(input).parse
+    expression = ExpressionParser.new(input).parse_expression
     expression.emit(vm_writer, @symbols)
   end
 

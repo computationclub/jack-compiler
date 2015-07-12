@@ -54,7 +54,7 @@ class ExpressionParser
     @tokenizer = tokenizer
   end
 
-  def parse
+  def parse_expression
     left_node = case tokenizer.token_type
     when Tokenizer::INT_CONST
       number = tokenizer.int_val
@@ -85,11 +85,11 @@ class ExpressionParser
       operation = tokenizer.symbol
       tokenizer.advance
 
-      right_node = parse
+      right_node = parse_expression
 
       BinaryOperation.new(operation, left_node, right_node)
     elsif tokenizer.symbol == '.'
-      fail 'Can only call methods on variables' unless left_node.is_a? Variable
+      fail 'Can only call methods on identifiers' unless left_node.is_a? Variable
       tokenizer.advance
       recipient = left_node.value
       parse_method_call(recipient)
@@ -98,11 +98,25 @@ class ExpressionParser
     end
   end
 
+  def parse_subroutine_call
+    fail 'Must start subroutine call with an identifier' unless tokenizer.token_type == Tokenizer::IDENTIFIER
+    recipient_or_method = tokenizer.identifier
+    tokenizer.advance
+    fail 'Expected "." or "("' unless (tokenizer.token_type == Tokenizer::SYMBOL) && (%w[. (].include? tokenizer.symbol)
+    tokenizer.advance
+    case tokenizer.symbol
+    when '.'
+      parse_method_call(recipient_or_method)
+    end
+  end
+
+  private
+
   def parse_unary_operation
     fail 'Not a supported unary operation' unless %w(- ~).include?(tokenizer.symbol)
     operation = tokenizer.symbol
     tokenizer.advance
-    expression = parse
+    expression = parse_expression
 
     UnaryOperation.new(operation, expression)
   end
@@ -111,7 +125,7 @@ class ExpressionParser
     fail 'Not an opening parenthesis' unless tokenizer.symbol == '('
     tokenizer.advance
 
-    node = parse
+    node = parse_expression
 
     fail 'Not a closing parenthesis' unless tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')'
 
@@ -130,7 +144,7 @@ class ExpressionParser
 
     loop do
       break if (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')')
-      arguments << parse
+      arguments << parse_expression
       tokenizer.advance if (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ',')
       break unless tokenizer.has_more_tokens?
     end

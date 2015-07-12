@@ -11,172 +11,173 @@ RSpec.describe ExpressionParser do
     Tokenizer.new(input_expression).tap { |t| t.advance }
   end
 
-  it 'emits VM code for numeric constants' do
-    tokenizer = build_tokenizer('1')
+  context '#parse_expression' do
+    it 'emits VM code for numeric constants' do
+      tokenizer = build_tokenizer('1')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, SymbolTable.new)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, SymbolTable.new)
 
-    expect(output.string).to eq("push constant 1\n")
-  end
+      expect(output.string).to eq("push constant 1\n")
+    end
 
-  it 'emits VM code for different numeric constants' do
-    tokenizer = build_tokenizer('2')
+    it 'emits VM code for different numeric constants' do
+      tokenizer = build_tokenizer('2')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, SymbolTable.new)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, SymbolTable.new)
 
-    expect(output.string).to eq("push constant 2\n")
-  end
+      expect(output.string).to eq("push constant 2\n")
+    end
 
-  it 'emits VM code for variables' do
-    tokenizer = build_tokenizer('a')
-    symbol_table.define('a', :int, :static)
+    it 'emits VM code for variables' do
+      tokenizer = build_tokenizer('a')
+      symbol_table.define('a', :int, :static)
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq("push static 0\n")
-  end
+      expect(output.string).to eq("push static 0\n")
+    end
 
-  it 'emits VM code for binary expressions' do
-    tokenizer = build_tokenizer('1 + 1')
+    it 'emits VM code for binary expressions' do
+      tokenizer = build_tokenizer('1 + 1')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 1
 push constant 1
 add
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for compound binary expressions' do
-    tokenizer = build_tokenizer('1 + 2 + 3')
+    it 'emits VM code for compound binary expressions' do
+      tokenizer = build_tokenizer('1 + 2 + 3')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 1
 push constant 2
 push constant 3
 add
 add
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for compound binary expressions with parentheses' do
-    tokenizer = build_tokenizer('(1 + 2) + 3')
+    it 'emits VM code for compound binary expressions with parentheses' do
+      tokenizer = build_tokenizer('(1 + 2) + 3')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 1
 push constant 2
 add
 push constant 3
 add
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for unary operations' do
-    tokenizer = build_tokenizer('~a')
-    symbol_table.define('a', :int, :static)
+    it 'emits VM code for unary operations' do
+      tokenizer = build_tokenizer('~a')
+      symbol_table.define('a', :int, :static)
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push static 0
 not
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for keywords' do
-    tokenizer = build_tokenizer('true')
+    it 'emits VM code for keywords' do
+      tokenizer = build_tokenizer('true')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 1
 neg
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for multiplication' do
-    tokenizer = build_tokenizer('1 * 2')
+    it 'emits VM code for multiplication' do
+      tokenizer = build_tokenizer('1 * 2')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 1
 push constant 2
 call Math.multiply 2
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for division' do
-    tokenizer = build_tokenizer('3 / 4')
+    it 'emits VM code for division' do
+      tokenizer = build_tokenizer('3 / 4')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 3
 push constant 4
 call Math.divide 2
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for calling external methods witn no arguments' do
-    tokenizer = build_tokenizer('Sys.halt()')
+    it 'emits VM code for calling external methods witn no arguments' do
+      tokenizer = build_tokenizer('Sys.halt()')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 call Sys.halt 0
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for calling external methods with a single argument' do
-    tokenizer = build_tokenizer('Output.printInt(4)')
+    it 'emits VM code for calling external methods with a single argument' do
+      tokenizer = build_tokenizer('Output.printInt(4)')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 4
 call Output.printInt 1
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for calling external methods with multiple arguments' do
-    tokenizer = build_tokenizer('Screen.drawPixel(4, 5)')
+    it 'emits VM code for calling external methods with multiple arguments' do
+      tokenizer = build_tokenizer('Screen.drawPixel(4, 5)')
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 4
 push constant 5
 call Screen.drawPixel 2
-    VM
-  end
+      VM
+    end
 
-  it 'emits VM code for calling external methods with complex expression-based arguments' do
-    tokenizer = build_tokenizer('Math.min((1*2), Memory.peek(array_start + 5))')
-    symbol_table.define('array_start', :int, :static)
+    it 'emits VM code for calling external methods with complex expression-based arguments' do
+      tokenizer = build_tokenizer('Math.min((1*2), Memory.peek(array_start + 5))')
+      symbol_table.define('array_start', :int, :static)
 
-    result = ExpressionParser.new(tokenizer).parse
-    result.emit(vm_writer, symbol_table)
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
 
-    expect(output.string).to eq(<<-VM)
+      expect(output.string).to eq(<<-VM)
 push constant 1
 push constant 2
 call Math.multiply 2
@@ -185,7 +186,72 @@ push constant 5
 add
 call Memory.peek 1
 call Math.min 2
-    VM
+      VM
+    end
   end
 
+  context 'parse_subroutine_call' do
+    it 'breaks if given a simple expression that is not a function call' do
+      expect { ExpressionParser.new(build_tokenizer('1')).parse_subroutine_call }.to raise_error
+      expect { ExpressionParser.new(build_tokenizer('1 + 2')).parse_subroutine_call }.to raise_error
+      expect { ExpressionParser.new(build_tokenizer('1.2')).parse_subroutine_call }.to raise_error
+      expect { ExpressionParser.new(build_tokenizer('()')).parse_subroutine_call }.to raise_error
+      expect { ExpressionParser.new(build_tokenizer('(call.me())')).parse_subroutine_call }.to raise_error
+    end
+
+    it 'emits VM code for calling external methods witn no arguments' do
+      tokenizer = build_tokenizer('Sys.halt()')
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+call Sys.halt 0
+      VM
+    end
+
+    it 'emits VM code for calling external methods with a single argument' do
+      tokenizer = build_tokenizer('Output.printInt(4)')
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 4
+call Output.printInt 1
+      VM
+    end
+
+    it 'emits VM code for calling external methods with multiple arguments' do
+      tokenizer = build_tokenizer('Screen.drawPixel(4, 5)')
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 4
+push constant 5
+call Screen.drawPixel 2
+      VM
+    end
+
+    it 'emits VM code for calling external methods with complex expression-based arguments' do
+      tokenizer = build_tokenizer('Math.min((1*2), Memory.peek(array_start + 5))')
+      symbol_table.define('array_start', :int, :static)
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 1
+push constant 2
+call Math.multiply 2
+push static 0
+push constant 5
+add
+call Memory.peek 1
+call Math.min 2
+      VM
+    end
+  end
 end

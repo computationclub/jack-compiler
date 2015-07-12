@@ -200,19 +200,29 @@ class CompilationEngine
   def compile_if
     consume(Tokenizer::KEYWORD, 'if')
 
+    end_label = build_label('IF_END')
+    then_label = build_label('IF_TRUE')
+    else_label = build_label('IF_FALSE')
+
     consume_wrapped('(') do
       compile_expression
     end
+    vm_writer.write_if(then_label)
+    vm_writer.write_goto(else_label)
 
+    vm_writer.write_label(then_label)
     consume_wrapped('{') do
       compile_statements
     end
+    vm_writer.write_goto(end_label)
 
+    vm_writer.write_label(else_label)
     if try_consume(Tokenizer::KEYWORD, 'else')
       consume_wrapped('{') do
         compile_statements
       end
     end
+    vm_writer.write_label(end_label)
   end
 
   def compile_expression_list

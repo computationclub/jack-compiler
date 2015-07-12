@@ -17,14 +17,14 @@ class ExpressionParser
     def emit(vm_writer, symbol_table)
       left_node.emit(vm_writer, symbol_table)
       right_node.emit(vm_writer, symbol_table)
-      vm_writer.write_operation(operation)
+      vm_writer.write_binary_operation(operation)
     end
   end
 
   UnaryOperation = Struct.new(:operation, :expression) do
     def emit(vm_writer, symbol_table)
       expression.emit(vm_writer, symbol_table)
-      vm_writer.write_operation(operation)
+      vm_writer.write_unary_operation(operation)
     end
   end
 

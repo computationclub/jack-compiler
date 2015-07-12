@@ -25,19 +25,31 @@ class VMWriter
     end
   end
 
-  def write_operation(operation)
+  def write_binary_operation(operation)
     case operation
     when '+'
       write_arithmetic('add')
     when '-'
-      write_arithmetic('neg')
-    when '~'
-      write_arithmetic('not')
+      write_arithmetic('sub')
     when '*'
       write_call('Math.multiply', 2)
     when '/'
       write_call('Math.divide', 2)
+    when '&'
+      write_arithmetic('and')
+    when '|'
+      write_arithmetic('or')
+    when '>'
+      write_arithmetic('gt')
+    when '<'
+      write_arithmetic('lt')
+    when '='
+      write_arithmetic('eq')
     end
+  end
+
+  def write_unary_operation(operation)
+    write_arithmetic({'-' => 'neg', '~' => 'not'}.fetch(operation))
   end
 
   def write_arithmetic(command)

@@ -54,7 +54,7 @@ add
     end
 
     it 'emits VM code for compound binary expressions' do
-      tokenizer = build_tokenizer('1 + 2 + 3')
+      tokenizer = build_tokenizer('1 + 2 - 3')
 
       result = ExpressionParser.new(tokenizer).parse_expression
       result.emit(vm_writer, symbol_table)
@@ -63,13 +63,13 @@ add
 push constant 1
 push constant 2
 push constant 3
-add
+sub
 add
       VM
     end
 
     it 'emits VM code for compound binary expressions with parentheses' do
-      tokenizer = build_tokenizer('(1 + 2) + 3')
+      tokenizer = build_tokenizer('(1 + 2) - 3')
 
       result = ExpressionParser.new(tokenizer).parse_expression
       result.emit(vm_writer, symbol_table)
@@ -79,11 +79,11 @@ push constant 1
 push constant 2
 add
 push constant 3
-add
+sub
       VM
     end
 
-    it 'emits VM code for unary operations' do
+    it 'emits VM code for unary not operations' do
       tokenizer = build_tokenizer('~a')
       symbol_table.define('a', :int, :static)
 
@@ -93,6 +93,19 @@ add
       expect(output.string).to eq(<<-VM)
 push static 0
 not
+      VM
+    end
+
+    it 'emits VM code for unary negation operations' do
+      tokenizer = build_tokenizer('-1')
+      symbol_table.define('a', :int, :static)
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 1
+neg
       VM
     end
 
@@ -116,6 +129,71 @@ not
 
       expect(output.string).to eq(<<-VM)
 push constant 0
+      VM
+    end
+
+    it 'emits VM code for bitwise and' do
+      tokenizer = build_tokenizer('1 & 2')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 1
+push constant 2
+and
+      VM
+    end
+
+    it 'emits VM code for bitwise or' do
+      tokenizer = build_tokenizer('3 | 4')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 3
+push constant 4
+or
+      VM
+    end
+
+    it 'emits VM code for equality comparison' do
+      tokenizer = build_tokenizer('1 = 2')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 1
+push constant 2
+eq
+      VM
+    end
+
+    it 'emits VM code for greater than comparison' do
+      tokenizer = build_tokenizer('3 > 4')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 3
+push constant 4
+gt
+      VM
+    end
+
+    it 'emits VM code for less than comparison' do
+      tokenizer = build_tokenizer('5 < 6')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 5
+push constant 6
+lt
       VM
     end
 

@@ -96,15 +96,26 @@ not
       VM
     end
 
-    it 'emits VM code for keywords' do
+    it 'emits VM code for `true`' do
       tokenizer = build_tokenizer('true')
 
       result = ExpressionParser.new(tokenizer).parse_expression
       result.emit(vm_writer, symbol_table)
 
       expect(output.string).to eq(<<-VM)
-push constant 1
-neg
+push constant 0
+not
+      VM
+    end
+
+    it 'emits VM code for `false`' do
+      tokenizer = build_tokenizer('false')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 0
       VM
     end
 

@@ -32,8 +32,8 @@ class ExpressionParser
     def emit(vm_writer, symbol_table)
       case value
       when 'true'
-        vm_writer.write_push('constant', '1')
-        vm_writer.write_arithmetic('neg')
+        vm_writer.write_push('constant', '0')
+        vm_writer.write_arithmetic('not')
       when 'null', 'false'
         vm_writer.write_push('constant', '0')
       end

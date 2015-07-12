@@ -186,6 +186,7 @@ class CompilationEngine
       consume_subroutine_call
 
       consume(Tokenizer::SYMBOL, ';')
+      vm_writer.write_pop('temp', 0)
     # end
   end
 

@@ -1,5 +1,6 @@
 require_relative 'symbol_table'
 require_relative 'vm_writer'
+require_relative 'expression_parser'
 
 class CompilationEngine
   attr_reader :input, :vm_writer
@@ -229,14 +230,8 @@ class CompilationEngine
   end
 
   def compile_expression
-    # b.expression do
-      compile_term
-
-      while %w[+ - * / & | < > =].include? current_token
-        consume(Tokenizer::SYMBOL)
-        compile_term
-      end
-    # end
+    expression = ExpressionParser.new(input).parse
+    expression.emit(vm_writer, @symbols)
   end
 
   def compile_term

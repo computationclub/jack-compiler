@@ -193,9 +193,13 @@ class CompilationEngine
     # b.returnStatement do
       consume(Tokenizer::KEYWORD, 'return')
 
-      compile_expression unless current_token == ';'
-
+      if current_token == ';'
+        vm_writer.write_push('constant', 0)
+      else
+        compile_expression
+      end
       consume(Tokenizer::SYMBOL, ';')
+      vm_writer.write_return
     # end
   end
 

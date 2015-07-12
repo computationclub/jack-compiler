@@ -49,6 +49,7 @@ class CompilationEngine
 
   def compile_subroutine
     @symbols.start_subroutine
+    reset_labels
 
     consume(Tokenizer::KEYWORD)
 
@@ -120,13 +121,20 @@ class CompilationEngine
   def compile_while
     consume(Tokenizer::KEYWORD, 'while')
 
+    expression_label = build_label('WHILE_EXP')
+    end_label = build_label('WHILE_END')
+    vm_writer.write_label(expression_label)
     consume_wrapped('(') do
       compile_expression
     end
+    vm_writer.write_arithmetic('not')
+    vm_writer.write_if(end_label)
 
     consume_wrapped('{') do
       compile_statements
     end
+    vm_writer.write_goto(expression_label)
+    vm_writer.write_label(end_label)
   end
 
   def compile_var_dec
@@ -348,5 +356,17 @@ class CompilationEngine
 
   def full_method_name
     "#{@class_name}.#{current_token}"
+  end
+
+  def build_label(label_base)
+    "#{label_base}#{all_labels[label_base] += 1}"
+  end
+
+  def reset_labels
+    all_labels.clear
+  end
+
+  def all_labels
+    @all_labels ||= Hash.new(-1)
   end
 end

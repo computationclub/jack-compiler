@@ -55,7 +55,31 @@ class ExpressionParser
   end
 
   def parse_expression
-    left_node = case tokenizer.token_type
+    left_node = parse_term
+
+    return left_node unless tokenizer.has_more_tokens?
+
+    tokenizer.advance
+
+    if (tokenizer.token_type == Tokenizer::SYMBOL) && (%w[+ - * / & | < > =].include?(tokenizer.symbol))
+      operation = tokenizer.symbol
+      tokenizer.advance
+
+      right_node = parse_expression
+
+      BinaryOperation.new(operation, left_node, right_node)
+    elsif (tokenizer.token_type == Tokenizer::SYMBOL) && (tokenizer.symbol == '.')
+      fail 'Can only call methods on identifiers' unless left_node.is_a? Variable
+      tokenizer.advance
+      recipient = left_node.value
+      parse_method_call(recipient)
+    else
+      left_node
+    end
+  end
+
+  def parse_term
+    case tokenizer.token_type
     when Tokenizer::INT_CONST
       number = tokenizer.int_val
 
@@ -72,29 +96,9 @@ class ExpressionParser
       case tokenizer.symbol
       when '('
         parse_nested_expression
-      else
+      when '-', '~'
         parse_unary_operation
       end
-    end
-
-    return left_node unless tokenizer.has_more_tokens?
-
-    tokenizer.advance
-
-    if %w[+ - * / & | < > =].include?(tokenizer.symbol)
-      operation = tokenizer.symbol
-      tokenizer.advance
-
-      right_node = parse_expression
-
-      BinaryOperation.new(operation, left_node, right_node)
-    elsif tokenizer.symbol == '.'
-      fail 'Can only call methods on identifiers' unless left_node.is_a? Variable
-      tokenizer.advance
-      recipient = left_node.value
-      parse_method_call(recipient)
-    else
-      left_node
     end
   end
 
@@ -108,8 +112,6 @@ class ExpressionParser
     when '.'
       parse_method_call(recipient_or_method)
     end
-  ensure
-    tokenizer.advance if tokenizer.has_more_tokens?
   end
 
   private
@@ -118,7 +120,7 @@ class ExpressionParser
     fail 'Not a supported unary operation' unless %w(- ~).include?(tokenizer.symbol)
     operation = tokenizer.symbol
     tokenizer.advance
-    expression = parse_expression
+    expression = parse_term
 
     UnaryOperation.new(operation, expression)
   end
@@ -145,13 +147,14 @@ class ExpressionParser
     arguments = []
 
     loop do
-      break if (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')')
+      break if (tokenizer.token_type == Tokenizer::SYMBOL) && (tokenizer.symbol == ')')
       arguments << parse_expression
-      tokenizer.advance if (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ',')
+      tokenizer.advance if (tokenizer.token_type == Tokenizer::SYMBOL) && (tokenizer.symbol == ',')
       break unless tokenizer.has_more_tokens?
     end
 
     fail 'Must supply closing parenthesis for method call' unless (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')')
+    tokenizer.advance if tokenizer.has_more_tokens?
 
     MethodCall.new(recipient, method_name, arguments)
   end

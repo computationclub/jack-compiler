@@ -222,15 +222,30 @@ call Output.printInt 1
       VM
     end
 
-    it 'emits VM code for calling external methods with multiple arguments' do
-      tokenizer = build_tokenizer('Screen.drawPixel(4, 5)')
+    it 'emits VM code for calling external methods with a single argument' do
+      tokenizer = build_tokenizer('Output.printInt(4)')
 
       result = ExpressionParser.new(tokenizer).parse_subroutine_call
       result.emit(vm_writer, symbol_table)
 
       expect(output.string).to eq(<<-VM)
 push constant 4
+call Output.printInt 1
+      VM
+    end
+
+
+    it 'emits VM code for calling external methods with unary operations' do
+      tokenizer = build_tokenizer('Screen.drawPixel(-4, -5)')
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push constant 4
+neg
 push constant 5
+neg
 call Screen.drawPixel 2
       VM
     end

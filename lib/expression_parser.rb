@@ -40,8 +40,9 @@ class ExpressionParser
     end
   end
 
-  MethodCall = Struct.new(:recipient, :method) do
+  MethodCall = Struct.new(:recipient, :method, :arguments) do
     def emit(vm_writer, symbol_table)
+      arguments.each { |argument| argument.emit(vm_writer, symbol_table) }
       vm_writer.write_call("#{recipient}.#{method}", arguments.length)
     end
   end
@@ -122,12 +123,21 @@ class ExpressionParser
     method_name = tokenizer.identifier
     tokenizer.advance
 
-    fail 'Must supply opening parenthesis for method call' unless tokenizer.symbol == '('
+    fail 'Must supply opening parenthesis for method call' unless (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == '(')
     tokenizer.advance
 
-    fail 'Must supply closing parenthesis for method call' unless tokenizer.symbol == ')'
+    arguments = []
 
-    MethodCall.new(recipient, method_name)
+    loop do
+      break if (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')')
+      arguments << parse
+      tokenizer.advance if (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ',')
+      break unless tokenizer.has_more_tokens?
+    end
+
+    fail 'Must supply closing parenthesis for method call' unless (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')')
+
+    MethodCall.new(recipient, method_name, arguments)
   end
 
 end

@@ -186,4 +186,64 @@ call Math.divide 2
 call Sys.halt 0
     VM
   end
+
+  it 'emits VM code for calling external methods with a single argument' do
+    tokenizer = Tokenizer.new('Output.printInt(4)')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push constant 4
+call Output.printInt 1
+    VM
+  end
+
+  it 'emits VM code for calling external methods with multiple arguments' do
+    tokenizer = Tokenizer.new('Screen.drawPixel(4, 5)')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push constant 4
+push constant 5
+call Screen.drawPixel 2
+    VM
+  end
+
+  it 'emits VM code for calling external methods with complex expression-based arguments' do
+    tokenizer = Tokenizer.new('Math.min((1*2), Memory.peek(array_start + 5))')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+    symbol_table.define('array_start', :int, :static)
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push constant 1
+push constant 2
+call Math.multiply 2
+push static 0
+push constant 5
+add
+call Memory.peek 1
+call Math.min 2
+    VM
+  end
+
 end

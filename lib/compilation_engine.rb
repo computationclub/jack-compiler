@@ -1,6 +1,7 @@
 require_relative 'symbol_table'
 require_relative 'vm_writer'
 require_relative 'expression_parser'
+require_relative 'labeller'
 
 class CompilationEngine
   attr_reader :input, :vm_writer
@@ -359,14 +360,10 @@ class CompilationEngine
   end
 
   def build_label(label_base)
-    "#{label_base}#{all_labels[label_base] += 1}"
+    @labeller.label(label_base)
   end
 
   def reset_labels
-    all_labels.clear
-  end
-
-  def all_labels
-    @all_labels ||= Hash.new(-1)
+    @labeller = Labeller.new
   end
 end

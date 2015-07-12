@@ -40,6 +40,12 @@ class ExpressionParser
     end
   end
 
+  MethodCall = Struct.new(:recipient, :method) do
+    def emit(vm_writer, symbol_table)
+      vm_writer.write_call("#{recipient}.#{method}", arguments.length)
+    end
+  end
+
   attr_reader :tokenizer
   private :tokenizer
 
@@ -81,6 +87,11 @@ class ExpressionParser
       right_node = parse
 
       BinaryOperation.new(operation, left_node, right_node)
+    elsif tokenizer.symbol == '.'
+      fail 'Can only call methods on variables' unless left_node.is_a? Variable
+      tokenizer.advance
+      recipient = left_node.value
+      parse_method_call(recipient)
     else
       left_node
     end
@@ -105,4 +116,18 @@ class ExpressionParser
 
     node
   end
+
+  def parse_method_call(recipient)
+    fail 'Not an identifier' unless tokenizer.token_type == Tokenizer::IDENTIFIER
+    method_name = tokenizer.identifier
+    tokenizer.advance
+
+    fail 'Must supply opening parenthesis for method call' unless tokenizer.symbol == '('
+    tokenizer.advance
+
+    fail 'Must supply closing parenthesis for method call' unless tokenizer.symbol == ')'
+
+    MethodCall.new(recipient, method_name)
+  end
+
 end

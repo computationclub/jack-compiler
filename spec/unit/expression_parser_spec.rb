@@ -170,4 +170,20 @@ push constant 4
 call Math.divide 2
     VM
   end
+
+  it 'emits VM code for calling external methods witn no arguments' do
+    tokenizer = Tokenizer.new('Sys.halt()')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+call Sys.halt 0
+    VM
+  end
 end

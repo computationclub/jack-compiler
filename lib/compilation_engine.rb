@@ -148,6 +148,7 @@ class CompilationEngine
   def compile_let
     consume(Tokenizer::KEYWORD, 'let')
 
+    name = current_token
     consume_identifier
 
     try_consume_wrapped('[') do
@@ -159,6 +160,7 @@ class CompilationEngine
     compile_expression
 
     consume(Tokenizer::SYMBOL, ';')
+    vm_writer.write_pop(@symbols.kind_of(name), @symbols.index_of(name))
   end
 
   def compile_do

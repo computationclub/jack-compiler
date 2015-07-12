@@ -7,11 +7,22 @@ class VMWriter
   end
 
   def write_push(segment, index)
-    io.puts("push #{segment} #{index}")
+    io.puts("push #{variable_reference(segment, index)}")
   end
 
   def write_pop(segment, index)
-    io.puts("pop #{segment} #{index}")
+    io.puts("pop #{variable_reference(segment, index)}")
+  end
+
+  def variable_reference(segment, index)
+    case segment
+    when 'var', :var
+      "local #{index}"
+    when 'arg', :arg
+      "argument #{index}"
+    else
+      "#{segment} #{index}"
+    end
   end
 
   def write_operation(operation)

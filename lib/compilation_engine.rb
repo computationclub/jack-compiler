@@ -62,9 +62,7 @@ class CompilationEngine
       n = compile_parameter_list
     end
 
-    vm_writer.write_function(method_name, n)
-
-    compile_subroutine_body
+    compile_subroutine_body(method_name)
   end
 
   def compile_parameter_list
@@ -87,11 +85,14 @@ class CompilationEngine
     n
   end
 
-  def compile_subroutine_body
+  def compile_subroutine_body(subroutine_name)
     consume_wrapped('{') do
+      local_var_count = 0
       while current_token == "var"
-        compile_var_dec
+        local_var_count += compile_var_dec
       end
+
+      vm_writer.write_function(subroutine_name, local_var_count)
 
       compile_statements
     end
@@ -136,13 +137,16 @@ class CompilationEngine
     type = current_token
     consume_type
 
+    variables_in_declaration_count = 0
     consume_separated(',') do
       name = current_token
       @symbols.define(name, type, kind)
       consume_identifier
+      variables_in_declaration_count += 1
     end
 
     consume(Tokenizer::SYMBOL, ';')
+    variables_in_declaration_count
   end
 
   def compile_let

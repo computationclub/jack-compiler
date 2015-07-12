@@ -152,4 +152,22 @@ push constant 2
 call Math.multiply 2
     VM
   end
+
+  it 'emits VM code for division' do
+    tokenizer = Tokenizer.new('3 / 4')
+    tokenizer.advance
+
+    symbol_table = SymbolTable.new
+
+    result = ExpressionParser.new(tokenizer).parse
+    output = StringIO.new
+    vm_writer = VMWriter.new(output)
+    result.emit(vm_writer, symbol_table)
+
+    expect(output.string).to eq(<<-VM)
+push constant 3
+push constant 4
+call Math.divide 2
+    VM
+  end
 end

@@ -24,6 +24,8 @@ class VMWriter
       write_arithmetic('not')
     when '*'
       write_call('Math.multiply', 2)
+    when '/'
+      write_call('Math.divide', 2)
     end
   end
 

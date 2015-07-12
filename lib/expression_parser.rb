@@ -108,6 +108,8 @@ class ExpressionParser
     when '.'
       parse_method_call(recipient_or_method)
     end
+  ensure
+    tokenizer.advance if tokenizer.has_more_tokens?
   end
 
   private

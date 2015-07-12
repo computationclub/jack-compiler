@@ -371,16 +371,9 @@ class CompilationEngine
     end
   end
 
-  def consume_subroutine_call(skip_identifier: false)
-    consume(Tokenizer::IDENTIFIER) unless skip_identifier
-
-    if try_consume(Tokenizer::SYMBOL, '.')
-      consume(Tokenizer::IDENTIFIER)
-    end
-
-    consume_wrapped('(') do
-      compile_expression_list
-    end
+  def consume_subroutine_call
+    subroutine_call = ExpressionParser.new(input).parse_subroutine_call
+    subroutine_call.emit(vm_writer, @symbols)
   end
 
   def full_method_name

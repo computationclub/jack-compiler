@@ -12,226 +12,200 @@ class CompilationEngine
   end
 
   def compile_class
-    # b.tag!(:class) do
-      # Get the ball moving!
-      input.advance
+    # Get the ball moving!
+    input.advance
 
-      consume(Tokenizer::KEYWORD, 'class')
+    consume(Tokenizer::KEYWORD, 'class')
 
-      @class_name = current_token
-      consume(Tokenizer::IDENTIFIER)
+    @class_name = current_token
+    consume(Tokenizer::IDENTIFIER)
 
-      consume_wrapped('{') do
-        while %w[field static].include? current_token
-          compile_class_var_dec
-        end
-
-        while %w[constructor function method].include? current_token
-          compile_subroutine
-        end
+    consume_wrapped('{') do
+      while %w[field static].include? current_token
+        compile_class_var_dec
       end
-    # end
+
+      while %w[constructor function method].include? current_token
+        compile_subroutine
+      end
+    end
   end
 
   def compile_class_var_dec
-    # b.classVarDec do
-      kind = current_token # field, static, etc.
-      consume(Tokenizer::KEYWORD)
+    kind = current_token # field, static, etc.
+    consume(Tokenizer::KEYWORD)
 
-      type = current_token # int, char, etc.
-      consume_type
+    type = current_token # int, char, etc.
+    consume_type
 
-      consume_separated(',') do
-        name = current_token
-        @symbols.define(name, type, kind)
-        consume_identifier(name)
-      end
+    consume_separated(',') do
+      name = current_token
+      @symbols.define(name, type, kind)
+      consume_identifier
+    end
 
-      consume(Tokenizer::SYMBOL, ';')
-    # end
+    consume(Tokenizer::SYMBOL, ';')
   end
 
   def compile_subroutine
     @symbols.start_subroutine
 
-    # b.subroutineDec do
-      consume(Tokenizer::KEYWORD)
+    consume(Tokenizer::KEYWORD)
 
-      try_consume(Tokenizer::KEYWORD, 'void') || consume_type
+    try_consume(Tokenizer::KEYWORD, 'void') || consume_type
 
-      method_name = full_method_name
-      consume(Tokenizer::IDENTIFIER)
+    method_name = full_method_name
+    consume(Tokenizer::IDENTIFIER)
 
-      n = 0
-      consume_wrapped('(') do
-        n = compile_parameter_list
-      end
+    n = 0
+    consume_wrapped('(') do
+      n = compile_parameter_list
+    end
 
-      vm_writer.write_function(method_name, n)
+    vm_writer.write_function(method_name, n)
 
-      compile_subroutine_body
-    # end
+    compile_subroutine_body
   end
 
   def compile_parameter_list
-    # b.parameterList do
-      return 0 if current_token == ')'
+    return 0 if current_token == ')'
 
-      n = 0
-      consume_separated(',') do
-        kind = :arg
+    n = 0
+    consume_separated(',') do
+      kind = :arg
 
-        type = current_token # int, char, etc.
-        consume_type
+      type = current_token # int, char, etc.
+      consume_type
 
-        name = current_token
-        @symbols.define(name, type, kind)
-        consume_identifier(name)
+      name = current_token
+      @symbols.define(name, type, kind)
+      consume_identifier
 
-        n += 1
-      end
-    # end
+      n += 1
+    end
 
     n
   end
 
   def compile_subroutine_body
-    # b.subroutineBody do
-      consume_wrapped('{') do
-        while current_token == "var"
-          compile_var_dec
-        end
-
-        compile_statements
+    consume_wrapped('{') do
+      while current_token == "var"
+        compile_var_dec
       end
-    # end
+
+      compile_statements
+    end
   end
 
   def compile_statements
-    # b.statements do
-      loop do
-        case current_token
-        when 'let'
-          compile_let
-        when 'do'
-          compile_do
-        when 'return'
-          compile_return
-        when 'if'
-          compile_if
-        when 'while'
-          compile_while
-        else
-          break
-        end
+    loop do
+      case current_token
+      when 'let'
+        compile_let
+      when 'do'
+        compile_do
+      when 'return'
+        compile_return
+      when 'if'
+        compile_if
+      when 'while'
+        compile_while
+      else
+        break
       end
-    # end
+    end
   end
 
   def compile_while
-    # b.whileStatement do
-      consume(Tokenizer::KEYWORD, 'while')
+    consume(Tokenizer::KEYWORD, 'while')
 
-      consume_wrapped('(') do
-        compile_expression
-      end
+    consume_wrapped('(') do
+      compile_expression
+    end
 
-      consume_wrapped('{') do
-        compile_statements
-      end
-    # end
+    consume_wrapped('{') do
+      compile_statements
+    end
   end
 
   def compile_var_dec
-    # b.varDec do
-      consume(Tokenizer::KEYWORD, 'var')
+    consume(Tokenizer::KEYWORD, 'var')
 
-      kind = :var
+    kind = :var
 
-      type = current_token
-      consume_type
+    type = current_token
+    consume_type
 
-      consume_separated(',') do
-        name = current_token
-        @symbols.define(name, type, kind)
-        consume_identifier(name)
-      end
+    consume_separated(',') do
+      name = current_token
+      @symbols.define(name, type, kind)
+      consume_identifier
+    end
 
-      consume(Tokenizer::SYMBOL, ';')
-    # end
+    consume(Tokenizer::SYMBOL, ';')
   end
 
   def compile_let
-    # b.letStatement do
-      consume(Tokenizer::KEYWORD, 'let')
+    consume(Tokenizer::KEYWORD, 'let')
 
-      consume_identifier
+    consume_identifier
 
-      try_consume_wrapped('[') do
-        compile_expression
-      end
-
-      consume(Tokenizer::SYMBOL, '=')
-
+    try_consume_wrapped('[') do
       compile_expression
+    end
 
-      consume(Tokenizer::SYMBOL, ';')
-    # end
+    consume(Tokenizer::SYMBOL, '=')
+
+    compile_expression
+
+    consume(Tokenizer::SYMBOL, ';')
   end
 
   def compile_do
-    # b.doStatement do
-      consume(Tokenizer::KEYWORD, 'do')
+    consume(Tokenizer::KEYWORD, 'do')
 
-      consume_subroutine_call
+    consume_subroutine_call
 
-      consume(Tokenizer::SYMBOL, ';')
-      vm_writer.write_pop('temp', 0)
-    # end
+    consume(Tokenizer::SYMBOL, ';')
+    vm_writer.write_pop('temp', 0)
   end
 
   def compile_return
-    # b.returnStatement do
-      consume(Tokenizer::KEYWORD, 'return')
+    consume(Tokenizer::KEYWORD, 'return')
 
-      if current_token == ';'
-        vm_writer.write_push('constant', 0)
-      else
-        compile_expression
-      end
-      consume(Tokenizer::SYMBOL, ';')
-      vm_writer.write_return
-    # end
+    if current_token == ';'
+      vm_writer.write_push('constant', 0)
+    else
+      compile_expression
+    end
+    consume(Tokenizer::SYMBOL, ';')
+    vm_writer.write_return
   end
 
   def compile_if
-    # b.ifStatement do
-      consume(Tokenizer::KEYWORD, 'if')
+    consume(Tokenizer::KEYWORD, 'if')
 
-      consume_wrapped('(') do
-        compile_expression
-      end
+    consume_wrapped('(') do
+      compile_expression
+    end
 
+    consume_wrapped('{') do
+      compile_statements
+    end
+
+    if try_consume(Tokenizer::KEYWORD, 'else')
       consume_wrapped('{') do
         compile_statements
       end
-
-      if try_consume(Tokenizer::KEYWORD, 'else')
-        consume_wrapped('{') do
-          compile_statements
-        end
-      end
-    # end
+    end
   end
 
   def compile_expression_list
-    # b.expressionList do
-      return if  current_token == ')'
+    return if current_token == ')'
 
-      consume_separated(',') do
-        compile_expression
-      end
-    # end
+    consume_separated(',') do
+      compile_expression
+    end
   end
 
   def compile_expression
@@ -240,46 +214,44 @@ class CompilationEngine
   end
 
   def compile_term
-    # b.term do
-      return if try_consume(Tokenizer::INT_CONST) ||
-                try_consume(Tokenizer::STRING_CONST) ||
-                try_consume_wrapped('(') { compile_expression }
+    return if try_consume(Tokenizer::INT_CONST) ||
+              try_consume(Tokenizer::STRING_CONST) ||
+              try_consume_wrapped('(') { compile_expression }
+
+    case current_token
+    when 'true', 'false', 'null', 'this' #keywordConst
+      consume(Tokenizer::KEYWORD)
+    when '-', '~' # unary op
+      consume(Tokenizer::SYMBOL)
+      compile_term
+    else
+      name = current_token
+      input.advance
 
       case current_token
-      when 'true', 'false', 'null', 'this' #keywordConst
-        consume(Tokenizer::KEYWORD)
-      when '-', '~' # unary op
-        consume(Tokenizer::SYMBOL)
-        compile_term
-      else
-        name = current_token
-        input.advance
+      when '['
+        # b.identifier(
+        #   name,
+        #   type: @symbols.type_of(name),
+        #   kind: @symbols.kind_of(name),
+        #   index: @symbols.index_of(name)
+        # )
 
-        case current_token
-        when '['
-          # b.identifier(
-          #   name,
-          #   type: @symbols.type_of(name),
-          #   kind: @symbols.kind_of(name),
-          #   index: @symbols.index_of(name)
-          # )
-
-          consume_wrapped('[') do
-            compile_expression
-          end
-        when '.', '('
-          # b.identifier(name)
-          consume_subroutine_call(skip_identifier: true)
-        else
-          # b.identifier(
-          #   name,
-          #   type: @symbols.type_of(name),
-          #   kind: @symbols.kind_of(name),
-          #   index: @symbols.index_of(name)
-          # )
+        consume_wrapped('[') do
+          compile_expression
         end
+      when '.', '('
+        # b.identifier(name)
+        consume_subroutine_call(skip_identifier: true)
+      else
+        # b.identifier(
+        #   name,
+        #   type: @symbols.type_of(name),
+        #   kind: @symbols.kind_of(name),
+        #   index: @symbols.index_of(name)
+        # )
       end
-    # end
+    end
   end
 
   private
@@ -298,21 +270,12 @@ class CompilationEngine
     return false unless current_type == expected_type &&
                         current_token == (expected_token || current_token)
 
-    # b.tag!(current_type, current_token)
-
     input.advance if input.has_more_tokens?
     true
   end
 
-  def consume_identifier(name = current_token)
-    # b.identifier(
-    #   name,
-    #   type: @symbols.type_of(name),
-    #   kind: @symbols.kind_of(name),
-    #   index: @symbols.index_of(name)
-    # )
-
-    input.advance if input.has_more_tokens?
+  def consume_identifier
+    try_consume(Tokenizer::IDENTIFIER)
   end
 
   def consume_wrapped(opening, &block)
@@ -334,10 +297,6 @@ class CompilationEngine
       consume(Tokenizer::SYMBOL, closing)
       true
     end
-  end
-
-  def b
-    @builder
   end
 
   def current_type

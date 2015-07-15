@@ -5,6 +5,24 @@ require_relative 'labeller'
 
 class CompilationEngine
   attr_reader :input, :vm_writer
+  attr_accessor :current_class, :current_method
+
+  JackClass = Struct.new(:name, :field_count)
+
+  JackMethod = Struct.new(:klass, :name, :method_type, :return_type, :argument_count, :local_var_count) do
+    def emit(vm_writer)
+      vm_writer.write_function("#{klass.name}.#{name}", local_var_count)
+      emit_memory_allocation(vm_writer) if constructor?
+    end
+    private
+    def constructor?
+      method_type == 'constructor'
+    end
+    def emit_memory_allocation(vm_writer)
+      vm_writer.write_push('constant', klass.field_count)
+      vm_writer.write_call('Memory.alloc', 1)
+    end
+  end
 
   def initialize(input, output)
     @input = input
@@ -18,13 +36,18 @@ class CompilationEngine
 
     consume(Tokenizer::KEYWORD, 'class')
 
-    @class_name = current_token
+    self.current_class = JackClass.new(current_token)
     consume(Tokenizer::IDENTIFIER)
 
     consume_wrapped('{') do
+      class_field_count = 0
       while %w[field static].include? current_token
-        compile_class_var_dec
+        field_type = current_token
+        class_var_count = compile_class_var_dec
+        class_field_count += class_var_count if field_type == 'field'
       end
+
+      current_class.field_count = class_field_count
 
       while %w[constructor function method].include? current_token
         compile_subroutine
@@ -39,24 +62,29 @@ class CompilationEngine
     type = current_token # int, char, etc.
     consume_type
 
+    fields_in_declaration_count = 0
     consume_separated(',') do
       name = current_token
       @symbols.define(name, type, kind)
       consume_identifier
+      fields_in_declaration_count += 1
     end
 
     consume(Tokenizer::SYMBOL, ';')
+    fields_in_declaration_count
   end
 
   def compile_subroutine
     @symbols.start_subroutine
     reset_labels
 
+    method_type = current_token
     consume(Tokenizer::KEYWORD)
 
+    return_type = current_token
     try_consume(Tokenizer::KEYWORD, 'void') || consume_type
 
-    method_name = full_method_name
+    method_name = current_token
     consume(Tokenizer::IDENTIFIER)
 
     n = 0
@@ -64,7 +92,9 @@ class CompilationEngine
       n = compile_parameter_list
     end
 
-    compile_subroutine_body(method_name)
+    self.current_method = JackMethod.new(current_class, method_name, method_type, return_type, n)
+
+    compile_subroutine_body
   end
 
   def compile_parameter_list
@@ -87,14 +117,16 @@ class CompilationEngine
     n
   end
 
-  def compile_subroutine_body(subroutine_name)
+  def compile_subroutine_body
     consume_wrapped('{') do
       local_var_count = 0
       while current_token == "var"
         local_var_count += compile_var_dec
       end
 
-      vm_writer.write_function(subroutine_name, local_var_count)
+      current_method.local_var_count = local_var_count
+
+      current_method.emit(vm_writer)
 
       compile_statements
     end
@@ -363,10 +395,6 @@ class CompilationEngine
   def consume_subroutine_call
     subroutine_call = ExpressionParser.new(input).parse_subroutine_call
     subroutine_call.emit(vm_writer, @symbols)
-  end
-
-  def full_method_name
-    "#{@class_name}.#{current_token}"
   end
 
   def build_label(label_base)

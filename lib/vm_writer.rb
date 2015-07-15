@@ -20,6 +20,8 @@ class VMWriter
       "local #{index}"
     when 'arg', :arg
       "argument #{index}"
+    when 'field', :field
+      "this #{index}"
     else
       "#{segment} #{index}"
     end

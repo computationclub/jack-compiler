@@ -13,14 +13,22 @@ class CompilationEngine
     def emit(vm_writer)
       vm_writer.write_function("#{klass.name}.#{name}", local_var_count)
       emit_memory_allocation(vm_writer) if constructor?
+      emit_setup_this_segment(vm_writer) if instance_method?
     end
     private
     def constructor?
       method_type == 'constructor'
     end
+    def instance_method?
+      method_type == 'method'
+    end
     def emit_memory_allocation(vm_writer)
       vm_writer.write_push('constant', klass.field_count)
       vm_writer.write_call('Memory.alloc', 1)
+      vm_writer.write_pop('pointer', 0)
+    end
+    def emit_setup_this_segment(vm_writer)
+      vm_writer.write_push('argument', 0)
       vm_writer.write_pop('pointer', 0)
     end
   end

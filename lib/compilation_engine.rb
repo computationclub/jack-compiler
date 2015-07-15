@@ -21,6 +21,7 @@ class CompilationEngine
     def emit_memory_allocation(vm_writer)
       vm_writer.write_push('constant', klass.field_count)
       vm_writer.write_call('Memory.alloc', 1)
+      vm_writer.write_pop('pointer', 0)
     end
   end
 

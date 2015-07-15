@@ -255,15 +255,16 @@ class CompilationEngine
     consume_wrapped('{') do
       compile_statements
     end
-    vm_writer.write_goto(end_label)
-
-    vm_writer.write_label(else_label)
     if try_consume(Tokenizer::KEYWORD, 'else')
+      vm_writer.write_goto(end_label)
+      vm_writer.write_label(else_label)
       consume_wrapped('{') do
         compile_statements
       end
+      vm_writer.write_label(end_label)
+    else
+      vm_writer.write_label(else_label)
     end
-    vm_writer.write_label(end_label)
   end
 
   def compile_expression_list

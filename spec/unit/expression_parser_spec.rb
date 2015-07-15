@@ -30,6 +30,67 @@ RSpec.describe ExpressionParser do
       expect(output.string).to eq("push constant 2\n")
     end
 
+    it 'emits VM code for empty strings by emitting a string constructor' do
+      tokenizer = build_tokenizer('""')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, SymbolTable.new)
+
+      expect(output.string).to eq(<<-VM)
+push constant 0
+call String.new 1
+      VM
+    end
+
+
+    it 'emits VM code for filled strings by emitting a string constructor and appending each char' do
+      tokenizer = build_tokenizer('"hello!"')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, SymbolTable.new)
+
+      expect(output.string).to eq(<<-VM)
+push constant 6
+call String.new 1
+push constant 104
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 33
+call String.appendChar 2
+      VM
+    end
+
+    it 'emits VM code for strings with unicode characters as single numbers per character' do
+      tokenizer = build_tokenizer('"héllo→"')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, SymbolTable.new)
+
+      expect(output.string).to eq(<<-VM)
+push constant 6
+call String.new 1
+push constant 104
+call String.appendChar 2
+push constant 233
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 108
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 8594
+call String.appendChar 2
+      VM
+    end
+
     it 'emits VM code for variables' do
       tokenizer = build_tokenizer('a')
       symbol_table.define('a', :int, :static)

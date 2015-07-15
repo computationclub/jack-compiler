@@ -7,6 +7,28 @@ class ExpressionParser
     end
   end
 
+  String = Struct.new(:value) do
+    def emit(vm_writer, _symbol_table)
+      emit_constructor(vm_writer)
+      emit_chars(vm_writer)
+    end
+
+    private
+    def emit_constructor(vm_writer)
+      vm_writer.write_push('constant', chars.length)
+      vm_writer.write_call('String.new', 1)
+    end
+    def chars
+      value.unpack('U*')
+    end
+    def emit_chars(vm_writer)
+      chars.each do |char|
+        vm_writer.write_push('constant', char)
+        vm_writer.write_call('String.appendChar', 2)
+      end
+    end
+  end
+
   Variable = Struct.new(:value) do
     def emit(vm_writer, symbol_table)
       vm_writer.write_push(symbol_table.kind_of(value), symbol_table.index_of(value))
@@ -84,6 +106,10 @@ class ExpressionParser
       number = tokenizer.int_val
 
       Number.new(number)
+    when Tokenizer::STRING_CONST
+      string = tokenizer.string_val
+
+      String.new(string)
     when Tokenizer::IDENTIFIER
       identifier = tokenizer.identifier
 

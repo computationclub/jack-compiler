@@ -149,6 +149,198 @@ return
     VM
   end
 
+  it 'compiles the Average programm correctly' do
+    tokenizer = Tokenizer.new(average_source)
+    compilation_engine = CompilationEngine.new(tokenizer, output)
+    compilation_engine.compile_class
+
+    expect(compiled_vm_code).to eq(<<-VM)
+function Main.main 4
+push constant 18
+call String.new 1
+push constant 72
+call String.appendChar 2
+push constant 111
+call String.appendChar 2
+push constant 119
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 109
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 110
+call String.appendChar 2
+push constant 121
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 110
+call String.appendChar 2
+push constant 117
+call String.appendChar 2
+push constant 109
+call String.appendChar 2
+push constant 98
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 115
+call String.appendChar 2
+push constant 63
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+call Keyboard.readInt 1
+pop local 1
+push local 1
+call Array.new 1
+pop local 0
+push constant 0
+pop local 2
+label WHILE_EXP0
+push local 2
+push local 1
+lt
+not
+if-goto WHILE_END0
+push local 2
+push local 0
+add
+push constant 23
+call String.new 1
+push constant 69
+call String.appendChar 2
+push constant 110
+call String.appendChar 2
+push constant 116
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 116
+call String.appendChar 2
+push constant 104
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 110
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 120
+call String.appendChar 2
+push constant 116
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 110
+call String.appendChar 2
+push constant 117
+call String.appendChar 2
+push constant 109
+call String.appendChar 2
+push constant 98
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 58
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+call Keyboard.readInt 1
+pop temp 0
+pop pointer 1
+push temp 0
+pop that 0
+push local 2
+push constant 1
+add
+pop local 2
+goto WHILE_EXP0
+label WHILE_END0
+push constant 0
+pop local 2
+push constant 0
+pop local 3
+label WHILE_EXP1
+push local 2
+push local 1
+lt
+not
+if-goto WHILE_END1
+push local 3
+push local 2
+push local 0
+add
+pop pointer 1
+push that 0
+add
+pop local 3
+push local 2
+push constant 1
+add
+pop local 2
+goto WHILE_EXP1
+label WHILE_END1
+push constant 16
+call String.new 1
+push constant 84
+call String.appendChar 2
+push constant 104
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 118
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 114
+call String.appendChar 2
+push constant 97
+call String.appendChar 2
+push constant 103
+call String.appendChar 2
+push constant 101
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+push constant 105
+call String.appendChar 2
+push constant 115
+call String.appendChar 2
+push constant 58
+call String.appendChar 2
+push constant 32
+call String.appendChar 2
+call Output.printString 1
+pop temp 0
+push local 3
+push local 1
+call Math.divide 2
+call Output.printInt 1
+pop temp 0
+call Output.println 0
+pop temp 0
+push constant 0
+return
+    VM
+  end
+
   let(:seven_jack_source) {
     <<-JACK
     // This file is part of www.nand2tetris.org
@@ -262,6 +454,47 @@ return
         }
     }
 
+    JACK
+  }
+
+  let(:average_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/11/Average/Main.jack
+
+    /** Computes the average of a sequence of integers */
+    class Main {
+        function void main() {
+            var Array a;
+            var int length;
+            var int i, sum;
+
+            let length = Keyboard.readInt("How many numbers? ");
+            let a = Array.new(length);
+            let i = 0;
+
+            while (i < length) {
+                let a[i] = Keyboard.readInt("Enter the next number: ");
+                let i = i + 1;
+            }
+
+            let i = 0;
+            let sum = 0;
+
+            while (i < length) {
+                let sum = sum + a[i];
+                let i = i + 1;
+            }
+
+            do Output.printString("The average is: ");
+            do Output.printInt(sum / length);
+            do Output.println();
+
+            return;
+        }
+    }
     JACK
   }
 end

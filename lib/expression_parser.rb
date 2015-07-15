@@ -1,14 +1,15 @@
 require_relative 'vm_writer'
 
 class ExpressionParser
+  This = Object.new
   Number = Struct.new(:value) do
-    def emit(vm_writer, _symbol_table)
+    def emit(vm_writer, _symbol_table, klass)
       vm_writer.write_push('constant', value)
     end
   end
 
   String = Struct.new(:value) do
-    def emit(vm_writer, _symbol_table)
+    def emit(vm_writer, _symbol_table, klass)
       emit_constructor(vm_writer)
       emit_chars(vm_writer)
     end
@@ -30,28 +31,28 @@ class ExpressionParser
   end
 
   Variable = Struct.new(:value) do
-    def emit(vm_writer, symbol_table)
+    def emit(vm_writer, symbol_table, _klass)
       vm_writer.write_push(symbol_table.kind_of(value), symbol_table.index_of(value))
     end
   end
 
   BinaryOperation = Struct.new(:operation, :left_node, :right_node) do
-    def emit(vm_writer, symbol_table)
-      left_node.emit(vm_writer, symbol_table)
-      right_node.emit(vm_writer, symbol_table)
+    def emit(vm_writer, symbol_table, klass)
+      left_node.emit(vm_writer, symbol_table, klass)
+      right_node.emit(vm_writer, symbol_table, klass)
       vm_writer.write_binary_operation(operation)
     end
   end
 
   UnaryOperation = Struct.new(:operation, :expression) do
-    def emit(vm_writer, symbol_table)
-      expression.emit(vm_writer, symbol_table)
+    def emit(vm_writer, symbol_table, klass)
+      expression.emit(vm_writer, symbol_table, klass)
       vm_writer.write_unary_operation(operation)
     end
   end
 
   Keyword = Struct.new(:value) do
-    def emit(vm_writer, symbol_table)
+    def emit(vm_writer, symbol_table, klass)
       case value
       when 'true'
         vm_writer.write_push('constant', '0')
@@ -63,10 +64,10 @@ class ExpressionParser
   end
 
   MethodCall = Struct.new(:recipient, :method, :arguments) do
-    def emit(vm_writer, symbol_table)
-      Emitter.new(self, vm_writer, symbol_table).emit
+    def emit(vm_writer, symbol_table, klass)
+      Emitter.new(self, vm_writer, symbol_table, klass).emit
     end
-    Emitter = Struct.new(:method_call, :vm_writer, :symbol_table) do
+    Emitter = Struct.new(:method_call, :vm_writer, :symbol_table, :klass) do
       def emit
         emit_recipient
         emit_arguments
@@ -74,19 +75,21 @@ class ExpressionParser
       end
       private
       def emit_recipient
-        if recipient_is_variable?
-          Variable.new(method_call.recipient).emit(vm_writer, symbol_table)
+        if recipient_is_this?
+          vm_writer.write_push('pointer', 0)
+        elsif recipient_is_variable?
+          Variable.new(method_call.recipient).emit(vm_writer, symbol_table, klass)
         end
       end
       def emit_arguments
-        method_call.arguments.each { |argument| argument.emit(vm_writer, symbol_table) }
+        method_call.arguments.each { |argument| argument.emit(vm_writer, symbol_table, klass) }
       end
       def emit_invocation
         vm_writer.write_call(method_name, arguments_length)
       end
       def arguments_length
         @_arguments_lenght ||=
-          if recipient_is_variable?
+          if recipient_is_this? || recipient_is_variable?
             method_call.arguments.length + 1
           else
             method_call.arguments.length
@@ -94,14 +97,19 @@ class ExpressionParser
       end
       def method_name
         @_method_name ||=
-          if recipient_is_variable?
+          if recipient_is_this?
+            "#{klass.name}.#{method_call.method}"
+          elsif recipient_is_variable?
             "#{recipient_type}.#{method_call.method}"
           else
             "#{method_call.recipient}.#{method_call.method}"
           end
       end
       def recipient_is_variable?
-        recipient_kind != :none
+        (!recipient_is_this?) && recipient_kind != :none
+      end
+      def recipient_is_this?
+        method_call.recipient == This
       end
       def recipient_kind
         @_recipient_kind ||= symbol_table.kind_of(method_call.recipient)
@@ -133,11 +141,18 @@ class ExpressionParser
       right_node = parse_expression
 
       BinaryOperation.new(operation, left_node, right_node)
-    elsif (tokenizer.token_type == Tokenizer::SYMBOL) && (tokenizer.symbol == '.')
-      fail 'Can only call methods on identifiers' unless left_node.is_a? Variable
+    elsif (tokenizer.token_type == Tokenizer::SYMBOL) && (%w[. (].include? tokenizer.symbol)
+      symbol = tokenizer.symbol
       tokenizer.advance
-      recipient = left_node.value
-      parse_method_call(recipient)
+      if symbol == '.'
+        fail 'Can only call methods on identifiers' unless left_node.is_a? Variable
+        recipient = left_node.value
+        parse_method_call(recipient: recipient)
+      else
+        fail 'method calls must be identifiers' unless left_node.is_a? Variable
+        method_name = left_node.value
+        parse_method_call(method_name: method_name)
+      end
     else
       left_node
     end
@@ -176,10 +191,12 @@ class ExpressionParser
     recipient_or_method = tokenizer.identifier
     tokenizer.advance
     fail 'Expected "." or "("' unless (tokenizer.token_type == Tokenizer::SYMBOL) && (%w[. (].include? tokenizer.symbol)
+    symbol = tokenizer.symbol
     tokenizer.advance
-    case tokenizer.symbol
-    when '.'
-      parse_method_call(recipient_or_method)
+    if symbol == '.'
+      parse_method_call(recipient: recipient_or_method)
+    else
+      parse_method_call(method_name: recipient_or_method)
     end
   end
 
@@ -205,13 +222,20 @@ class ExpressionParser
     node
   end
 
-  def parse_method_call(recipient)
-    fail 'Not an identifier' unless tokenizer.token_type == Tokenizer::IDENTIFIER
-    method_name = tokenizer.identifier
-    tokenizer.advance
+  def parse_method_call(recipient:nil, method_name:nil)
+    fail 'Must provide recipient or method' if recipient.nil? && method_name.nil?
+    fail 'Cannot provide both recipient and method' unless recipient.nil? || method_name.nil?
 
-    fail 'Must supply opening parenthesis for method call' unless (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == '(')
-    tokenizer.advance
+    if method_name.nil?
+      fail 'Not an identifier' unless tokenizer.token_type == Tokenizer::IDENTIFIER
+      method_name = tokenizer.identifier
+      tokenizer.advance
+
+      fail 'Must supply opening parenthesis for method call' unless (tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == '(')
+      tokenizer.advance
+    else
+      recipient = This
+    end
 
     arguments = []
 

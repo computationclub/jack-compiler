@@ -268,7 +268,7 @@ class CompilationEngine
 
   def compile_expression
     expression = ExpressionParser.new(input).parse_expression
-    expression.emit(vm_writer, @symbols)
+    expression.emit(vm_writer, @symbols, current_class)
   end
 
   def compile_term
@@ -395,7 +395,7 @@ class CompilationEngine
 
   def consume_subroutine_call
     subroutine_call = ExpressionParser.new(input).parse_subroutine_call
-    subroutine_call.emit(vm_writer, @symbols)
+    subroutine_call.emit(vm_writer, @symbols, current_class)
   end
 
   def build_label(label_base)

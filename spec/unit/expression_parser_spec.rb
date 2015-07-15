@@ -1,11 +1,13 @@
 require 'tokenizer'
 require 'expression_parser'
 require 'symbol_table'
+require 'compilation_engine'
 
 RSpec.describe ExpressionParser do
   let(:output) { StringIO.new }
   let(:vm_writer) { VMWriter.new(output) }
   let(:symbol_table) { SymbolTable.new }
+  let(:klass) { CompilationEngine::JackClass.new('FunTimes', 1) }
 
   def build_tokenizer(input_expression)
     Tokenizer.new(input_expression).tap { |t| t.advance }
@@ -16,7 +18,7 @@ RSpec.describe ExpressionParser do
       tokenizer = build_tokenizer('1')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, SymbolTable.new)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq("push constant 1\n")
     end
@@ -25,7 +27,7 @@ RSpec.describe ExpressionParser do
       tokenizer = build_tokenizer('2')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, SymbolTable.new)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq("push constant 2\n")
     end
@@ -34,7 +36,7 @@ RSpec.describe ExpressionParser do
       tokenizer = build_tokenizer('""')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, SymbolTable.new)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 0
@@ -46,7 +48,7 @@ call String.new 1
       tokenizer = build_tokenizer('"hello!"')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, SymbolTable.new)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 6
@@ -70,7 +72,7 @@ call String.appendChar 2
       tokenizer = build_tokenizer('"héllo→"')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, SymbolTable.new)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 6
@@ -95,7 +97,7 @@ call String.appendChar 2
       symbol_table.define('a', :int, :static)
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq("push static 0\n")
     end
@@ -104,7 +106,7 @@ call String.appendChar 2
       tokenizer = build_tokenizer('1 + 1')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -117,7 +119,7 @@ add
       tokenizer = build_tokenizer('1 + 2 - 3')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -132,7 +134,7 @@ add
       tokenizer = build_tokenizer('(1 + 2) - 3')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -148,7 +150,7 @@ sub
       symbol_table.define('a', :int, :static)
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push static 0
@@ -161,7 +163,7 @@ not
       symbol_table.define('a', :int, :static)
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -173,7 +175,7 @@ neg
       tokenizer = build_tokenizer('true')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 0
@@ -185,7 +187,7 @@ not
       tokenizer = build_tokenizer('false')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 0
@@ -196,7 +198,7 @@ push constant 0
       tokenizer = build_tokenizer('1 & 2')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -209,7 +211,7 @@ and
       tokenizer = build_tokenizer('3 | 4')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 3
@@ -222,7 +224,7 @@ or
       tokenizer = build_tokenizer('1 = 2')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -235,7 +237,7 @@ eq
       tokenizer = build_tokenizer('3 > 4')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 3
@@ -248,7 +250,7 @@ gt
       tokenizer = build_tokenizer('5 < 6')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 5
@@ -261,7 +263,7 @@ lt
       tokenizer = build_tokenizer('1 * 2')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -274,7 +276,7 @@ call Math.multiply 2
       tokenizer = build_tokenizer('3 / 4')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 3
@@ -287,7 +289,7 @@ call Math.divide 2
       tokenizer = build_tokenizer('Sys.halt()')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 call Sys.halt 0
@@ -298,7 +300,7 @@ call Sys.halt 0
       tokenizer = build_tokenizer('Output.printInt(4)')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 4
@@ -310,7 +312,7 @@ call Output.printInt 1
       tokenizer = build_tokenizer('Screen.drawPixel(4, 5)')
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 4
@@ -324,7 +326,7 @@ call Screen.drawPixel 2
       symbol_table.define('array_start', :int, :static)
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -343,7 +345,7 @@ call Math.min 2
       symbol_table.define('game', 'SquareGame', :var)
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push local 0
@@ -358,7 +360,7 @@ call SquareGame.run 1
       symbol_table.define('y', :int, :arg)
 
       result = ExpressionParser.new(tokenizer).parse_expression
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push local 0
@@ -366,6 +368,65 @@ push constant 1
 push argument 0
 push argument 1
 call SquareGame.run 4
+      VM
+    end
+
+    it 'emits VM code for calling internal methods witn no arguments' do
+      tokenizer = build_tokenizer('woah()')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+call FunTimes.woah 1
+      VM
+    end
+
+    it 'emits VM code for calling internal methods with a single argument' do
+      tokenizer = build_tokenizer('woah(4)')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+push constant 4
+call FunTimes.woah 2
+      VM
+    end
+
+    it 'emits VM code for calling internal methods with multiple arguments' do
+      tokenizer = build_tokenizer('woah(4, 5)')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+push constant 4
+push constant 5
+call FunTimes.woah 3
+      VM
+    end
+
+    it 'emits VM code for calling internal methods with complex expression-based arguments' do
+      tokenizer = build_tokenizer('woah((1*2), Memory.peek(array_start + 5))')
+      symbol_table.define('array_start', :int, :static)
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+push constant 1
+push constant 2
+call Math.multiply 2
+push static 0
+push constant 5
+add
+call Memory.peek 1
+call FunTimes.woah 3
       VM
     end
   end
@@ -383,7 +444,7 @@ call SquareGame.run 4
       tokenizer = build_tokenizer('Sys.halt()')
 
       result = ExpressionParser.new(tokenizer).parse_subroutine_call
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 call Sys.halt 0
@@ -394,7 +455,7 @@ call Sys.halt 0
       tokenizer = build_tokenizer('Output.printInt(4)')
 
       result = ExpressionParser.new(tokenizer).parse_subroutine_call
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 4
@@ -406,7 +467,7 @@ call Output.printInt 1
       tokenizer = build_tokenizer('Output.printInt(4)')
 
       result = ExpressionParser.new(tokenizer).parse_subroutine_call
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 4
@@ -419,7 +480,7 @@ call Output.printInt 1
       tokenizer = build_tokenizer('Screen.drawPixel(-4, -5)')
 
       result = ExpressionParser.new(tokenizer).parse_subroutine_call
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 4
@@ -435,7 +496,7 @@ call Screen.drawPixel 2
       symbol_table.define('array_start', :int, :static)
 
       result = ExpressionParser.new(tokenizer).parse_subroutine_call
-      result.emit(vm_writer, symbol_table)
+      result.emit(vm_writer, symbol_table, klass)
 
       expect(output.string).to eq(<<-VM)
 push constant 1
@@ -446,6 +507,95 @@ push constant 5
 add
 call Memory.peek 1
 call Math.min 2
+      VM
+    end
+    it 'emits VM code for calling nullary methods on variables defined in symbol table' do
+      tokenizer = build_tokenizer('game.run()')
+      symbol_table.define('game', 'SquareGame', :var)
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push local 0
+call SquareGame.run 1
+      VM
+    end
+
+    it 'emits VM code for calling methods with arguments on variables defined in symbol table' do
+      tokenizer = build_tokenizer('game.run(1, x, y)')
+      symbol_table.define('game', 'SquareGame', :var)
+      symbol_table.define('x', :int, :arg)
+      symbol_table.define('y', :int, :arg)
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push local 0
+push constant 1
+push argument 0
+push argument 1
+call SquareGame.run 4
+      VM
+    end
+
+    it 'emits VM code for calling internal methods witn no arguments' do
+      tokenizer = build_tokenizer('woah()')
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+call FunTimes.woah 1
+      VM
+    end
+
+    it 'emits VM code for calling internal methods with a single argument' do
+      tokenizer = build_tokenizer('woah(4)')
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+push constant 4
+call FunTimes.woah 2
+      VM
+    end
+
+    it 'emits VM code for calling internal methods with multiple arguments' do
+      tokenizer = build_tokenizer('woah(4, 5)')
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+push constant 4
+push constant 5
+call FunTimes.woah 3
+      VM
+    end
+
+    it 'emits VM code for calling internal methods with complex expression-based arguments' do
+      tokenizer = build_tokenizer('woah((1*2), Memory.peek(array_start + 5))')
+      symbol_table.define('array_start', :int, :static)
+
+      result = ExpressionParser.new(tokenizer).parse_subroutine_call
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+push constant 1
+push constant 2
+call Math.multiply 2
+push static 0
+push constant 5
+add
+call Memory.peek 1
+call FunTimes.woah 3
       VM
     end
   end

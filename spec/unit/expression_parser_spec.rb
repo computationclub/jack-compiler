@@ -42,7 +42,6 @@ call String.new 1
       VM
     end
 
-
     it 'emits VM code for filled strings by emitting a string constructor and appending each char' do
       tokenizer = build_tokenizer('"hello!"')
 
@@ -336,6 +335,37 @@ push constant 5
 add
 call Memory.peek 1
 call Math.min 2
+      VM
+    end
+
+    it 'emits VM code for calling nullary methods on variables defined in symbol table' do
+      tokenizer = build_tokenizer('game.run()')
+      symbol_table.define('game', 'SquareGame', :var)
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push local 0
+call SquareGame.run 1
+      VM
+    end
+
+    it 'emits VM code for calling methods with arguments on variables defined in symbol table' do
+      tokenizer = build_tokenizer('game.run(1, x, y)')
+      symbol_table.define('game', 'SquareGame', :var)
+      symbol_table.define('x', :int, :arg)
+      symbol_table.define('y', :int, :arg)
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table)
+
+      expect(output.string).to eq(<<-VM)
+push local 0
+push constant 1
+push argument 0
+push argument 1
+call SquareGame.run 4
       VM
     end
   end

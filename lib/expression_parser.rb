@@ -64,8 +64,51 @@ class ExpressionParser
 
   MethodCall = Struct.new(:recipient, :method, :arguments) do
     def emit(vm_writer, symbol_table)
-      arguments.each { |argument| argument.emit(vm_writer, symbol_table) }
-      vm_writer.write_call("#{recipient}.#{method}", arguments.length)
+      Emitter.new(self, vm_writer, symbol_table).emit
+    end
+    Emitter = Struct.new(:method_call, :vm_writer, :symbol_table) do
+      def emit
+        emit_recipient
+        emit_arguments
+        emit_invocation
+      end
+      private
+      def emit_recipient
+        if recipient_is_variable?
+          Variable.new(method_call.recipient).emit(vm_writer, symbol_table)
+        end
+      end
+      def emit_arguments
+        method_call.arguments.each { |argument| argument.emit(vm_writer, symbol_table) }
+      end
+      def emit_invocation
+        vm_writer.write_call(method_name, arguments_length)
+      end
+      def arguments_length
+        @_arguments_lenght ||=
+          if recipient_is_variable?
+            method_call.arguments.length + 1
+          else
+            method_call.arguments.length
+          end
+      end
+      def method_name
+        @_method_name ||=
+          if recipient_is_variable?
+            "#{recipient_type}.#{method_call.method}"
+          else
+            "#{method_call.recipient}.#{method_call.method}"
+          end
+      end
+      def recipient_is_variable?
+        recipient_kind != :none
+      end
+      def recipient_kind
+        @_recipient_kind ||= symbol_table.kind_of(method_call.recipient)
+      end
+      def recipient_type
+        @_recipient_type ||= symbol_table.type_of(method_call.recipient)
+      end
     end
   end
 

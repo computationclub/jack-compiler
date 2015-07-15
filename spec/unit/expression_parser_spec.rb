@@ -194,6 +194,17 @@ push constant 0
       VM
     end
 
+    it 'emits VM code for `this`' do
+      tokenizer = build_tokenizer('this')
+
+      result = ExpressionParser.new(tokenizer).parse_expression
+      result.emit(vm_writer, symbol_table, klass)
+
+      expect(output.string).to eq(<<-VM)
+push pointer 0
+      VM
+    end
+
     it 'emits VM code for bitwise and' do
       tokenizer = build_tokenizer('1 & 2')
 

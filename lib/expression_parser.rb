@@ -59,6 +59,8 @@ class ExpressionParser
         vm_writer.write_arithmetic('not')
       when 'null', 'false'
         vm_writer.write_push('constant', '0')
+      when 'this'
+        vm_writer.write_push('pointer', 0)
       end
     end
   end

@@ -50,8 +50,10 @@ class ExpressionParser
     alias_method :emit, :emit_read
     def emit_assignment_to(assignment_expression, vm_writer, symbol_table, klass)
       emit_index(vm_writer, symbol_table, klass)
-      emit_dereference(vm_writer)
       assignment_expression.emit(vm_writer, symbol_table, klass)
+      emit_store_assignment_value(vm_writer)
+      emit_dereference(vm_writer)
+      emit_read_assignment_value(vm_writer)
       vm_writer.write_pop('that', 0)
     end
     private
@@ -62,6 +64,12 @@ class ExpressionParser
     end
     def emit_dereference(vm_writer)
       vm_writer.write_pop('pointer', 1)
+    end
+    def emit_store_assignment_value(vm_writer)
+      vm_writer.write_pop('temp', 0)
+    end
+    def emit_read_assignment_value(vm_writer)
+      vm_writer.write_push('temp', 0)
     end
   end
 

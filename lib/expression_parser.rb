@@ -36,6 +36,23 @@ class ExpressionParser
     end
   end
 
+  ArrayReference = Struct.new(:variable, :index_expression) do
+    def emit(vm_writer, symbol_table, klass)
+      emit_index(vm_writer, symbol_table, klass)
+      emit_dereference(vm_writer)
+      vm_writer.write_push('that', 0)
+    end
+    private
+    def emit_index(vm_writer, symbol_table, klass)
+      variable.emit(vm_writer, symbol_table, klass)
+      index_expression.emit(vm_writer, symbol_table, klass)
+      vm_writer.write_arithmetic('add')
+    end
+    def emit_dereference(vm_writer)
+      vm_writer.write_pop('pointer', 1)
+    end
+  end
+
   BinaryOperation = Struct.new(:operation, :left_node, :right_node) do
     def emit(vm_writer, symbol_table, klass)
       left_node.emit(vm_writer, symbol_table, klass)
@@ -155,6 +172,15 @@ class ExpressionParser
         method_name = left_node.value
         parse_method_call(method_name: method_name)
       end
+    elsif (tokenizer.token_type == Tokenizer::SYMBOL) && tokenizer.symbol == '['
+      tokenizer.advance
+      array_variable = left_node
+      index_expression = parse_expression
+
+      fail 'must close array reference' unless (tokenizer.token_type == Tokenizer::SYMBOL) && tokenizer.symbol == ']'
+      tokenizer.advance if tokenizer.has_more_tokens?
+
+      ArrayReference.new(array_variable, index_expression)
     else
       left_node
     end

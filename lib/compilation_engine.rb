@@ -202,19 +202,24 @@ class CompilationEngine
   def compile_let
     consume(Tokenizer::KEYWORD, 'let')
 
-    name = current_token
+    variable = ExpressionParser::Variable.new(current_token)
     consume_identifier
 
+    array_index_expression = nil
     try_consume_wrapped('[') do
-      compile_expression
+      array_index_expression = extract_expression
+    end
+    unless array_index_expression.nil?
+      variable = ExpressionParser::ArrayReference.new(variable, array_index_expression)
     end
 
     consume(Tokenizer::SYMBOL, '=')
 
-    compile_expression
+    assignment_expression = extract_expression
 
     consume(Tokenizer::SYMBOL, ';')
-    vm_writer.write_pop(@symbols.kind_of(name), @symbols.index_of(name))
+
+    variable.emit_assignment_to(assignment_expression, vm_writer, @symbols, current_class)
   end
 
   def compile_do
@@ -276,8 +281,11 @@ class CompilationEngine
   end
 
   def compile_expression
-    expression = ExpressionParser.new(input).parse_expression
-    expression.emit(vm_writer, @symbols, current_class)
+    extract_expression.emit(vm_writer, @symbols, current_class)
+  end
+
+  def extract_expression
+    ExpressionParser.new(input).parse_expression
   end
 
   def compile_term

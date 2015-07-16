@@ -31,16 +31,28 @@ class ExpressionParser
   end
 
   Variable = Struct.new(:value) do
-    def emit(vm_writer, symbol_table, _klass)
+    def emit_read(vm_writer, symbol_table, _klass)
       vm_writer.write_push(symbol_table.kind_of(value), symbol_table.index_of(value))
+    end
+    alias_method :emit, :emit_read
+    def emit_assignment_to(assignment_expression, vm_writer, symbol_table, klass)
+      assignment_expression.emit(vm_writer, symbol_table, klass)
+      vm_writer.write_pop(symbol_table.kind_of(value), symbol_table.index_of(value))
     end
   end
 
   ArrayReference = Struct.new(:variable, :index_expression) do
-    def emit(vm_writer, symbol_table, klass)
+    def emit_read(vm_writer, symbol_table, klass)
       emit_index(vm_writer, symbol_table, klass)
       emit_dereference(vm_writer)
       vm_writer.write_push('that', 0)
+    end
+    alias_method :emit, :emit_read
+    def emit_assignment_to(assignment_expression, vm_writer, symbol_table, klass)
+      emit_index(vm_writer, symbol_table, klass)
+      emit_dereference(vm_writer)
+      assignment_expression.emit(vm_writer, symbol_table, klass)
+      vm_writer.write_pop('that', 0)
     end
     private
     def emit_index(vm_writer, symbol_table, klass)

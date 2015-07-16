@@ -122,15 +122,14 @@ call String.appendChar 2
         'a[1]'
       ).to be_parsed_into(
         <<-VM
-push static 0
 push constant 1
+push static 0
 add
 pop pointer 1
 push that 0
         VM
       ).when_parsed_as :expression
     end
-
 
     it 'emits VM code for binary expressions' do
       expect(

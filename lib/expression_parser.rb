@@ -56,8 +56,8 @@ class ExpressionParser
     end
     private
     def emit_index(vm_writer, symbol_table, klass)
-      variable.emit(vm_writer, symbol_table, klass)
       index_expression.emit(vm_writer, symbol_table, klass)
+      variable.emit(vm_writer, symbol_table, klass)
       vm_writer.write_arithmetic('add')
     end
     def emit_dereference(vm_writer)

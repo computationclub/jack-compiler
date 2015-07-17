@@ -1,67 +1,37 @@
 require 'compilation_engine'
-require 'tokenizer'
+require_relative '../compiles_down_to_matcher'
 
 RSpec.describe CompilationEngine do
-  let(:output) { StringIO.new }
-  subject(:compiled_vm_code) { output.string }
+  include CompilesDownTo
 
   it 'compiles the Seven program correctly' do
-    tokenizer = Tokenizer.new(seven_jack_source)
-
-    compilation_engine = CompilationEngine.new(tokenizer, output)
-    compilation_engine.compile_class
-
-    expect(compiled_vm_code).to eq(seven_vm_code)
+    expect(seven_jack_source).to compile_down_to(seven_vm_code)
   end
 
   it 'compiles the ConvertToBin programm correctly' do
-    tokenizer = Tokenizer.new(convert_to_bin_jack_source)
-    compilation_engine = CompilationEngine.new(tokenizer, output)
-    compilation_engine.compile_class
-
-    expect(compiled_vm_code).to eq(convert_to_bin_vm_code)
+    expect(convert_to_bin_jack_source).to compile_down_to(convert_to_bin_vm_code)
   end
 
   context 'Square program' do
     it 'compiles the main file correctly' do
-      tokenizer = Tokenizer.new(square_main_jack_source)
-      compilation_engine = CompilationEngine.new(tokenizer, output)
-      compilation_engine.compile_class
-
-      expect(compiled_vm_code).to eq(square_main_vm_code)
+      expect(square_main_jack_source).to compile_down_to(square_main_vm_code)
     end
 
     it 'compiles the square file correctly' do
-      tokenizer = Tokenizer.new(square_square_source)
-      compilation_engine = CompilationEngine.new(tokenizer, output)
-      compilation_engine.compile_class
-
-      expect(compiled_vm_code).to eq(square_square_vm_code)
+      expect(square_square_jack_source).to compile_down_to(square_square_vm_code)
     end
 
     it 'compiles the squaregame file correctly' do
-      tokenizer = Tokenizer.new(square_squaregame_jack_source)
-      compilation_engine = CompilationEngine.new(tokenizer, output)
-      compilation_engine.compile_class
-
-      expect(compiled_vm_code).to eq(square_squaregame_vm_code)
+      expect(square_squaregame_jack_source).to compile_down_to(square_squaregame_vm_code)
     end
   end
 
   it 'compiles the Average programm correctly' do
-    tokenizer = Tokenizer.new(average_jack_source)
-    compilation_engine = CompilationEngine.new(tokenizer, output)
-    compilation_engine.compile_class
-
-    expect(compiled_vm_code).to eq(average_vm_code)
+    expect(average_jack_source).to compile_down_to(average_vm_code)
   end
 
   it 'compiles the ComplexArrays programm correctly' do
-    tokenizer = Tokenizer.new(complex_arrays_jack_source)
-    compilation_engine = CompilationEngine.new(tokenizer, output)
-    compilation_engine.compile_class
-
-    expect(compiled_vm_code).to eq(complex_arrays_vm_code)
+    expect(complex_arrays_jack_source).to compile_down_to(complex_arrays_vm_code)
   end
 
   let(:seven_jack_source) {

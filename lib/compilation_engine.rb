@@ -277,61 +277,12 @@ class CompilationEngine
     end
   end
 
-  def compile_expression_list
-    return if current_token == ')'
-
-    consume_separated(',') do
-      compile_expression
-    end
-  end
-
   def compile_expression
     extract_expression.emit(vm_writer, @symbols, current_class)
   end
 
   def extract_expression
     ExpressionParser.new(input).parse_expression
-  end
-
-  def compile_term
-    return if try_consume(Tokenizer::INT_CONST) ||
-              try_consume(Tokenizer::STRING_CONST) ||
-              try_consume_wrapped('(') { compile_expression }
-
-    case current_token
-    when 'true', 'false', 'null', 'this' #keywordConst
-      consume(Tokenizer::KEYWORD)
-    when '-', '~' # unary op
-      consume(Tokenizer::SYMBOL)
-      compile_term
-    else
-      name = current_token
-      input.advance
-
-      case current_token
-      when '['
-        # b.identifier(
-        #   name,
-        #   type: @symbols.type_of(name),
-        #   kind: @symbols.kind_of(name),
-        #   index: @symbols.index_of(name)
-        # )
-
-        consume_wrapped('[') do
-          compile_expression
-        end
-      when '.', '('
-        # b.identifier(name)
-        consume_subroutine_call(skip_identifier: true)
-      else
-        # b.identifier(
-        #   name,
-        #   type: @symbols.type_of(name),
-        #   kind: @symbols.kind_of(name),
-        #   index: @symbols.index_of(name)
-        # )
-      end
-    end
   end
 
   private

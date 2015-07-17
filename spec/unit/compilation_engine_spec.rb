@@ -30,6 +30,12 @@ RSpec.describe CompilationEngine do
     expect(average_jack_source).to compile_down_to(average_vm_code)
   end
 
+  context 'Pong program' do
+    it 'compiles the bat file correctly' do
+      expect(pong_bat_jack_source).to compile_down_to(pong_bat_vm_code)
+    end
+  end
+
   it 'compiles the ComplexArrays programm correctly' do
     expect(complex_arrays_jack_source).to compile_down_to(complex_arrays_vm_code)
   end
@@ -1266,6 +1272,332 @@ call Output.printInt 1
 pop temp 0
 call Output.println 0
 pop temp 0
+push constant 0
+return
+    VM
+  }
+
+  let(:pong_bat_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/11/Pong/Bat.jack.
+
+    /**
+     * A graphic Pong bat. Has a screen location, width and height.
+     * Has methods for drawing, erasing, moving left and right on
+     * the screen and changing the width.
+     */
+    class Bat {
+
+        // The screen location
+        field int x, y;
+
+        // The width and height
+        field int width, height;
+
+        // The direction of the bat's movement
+        field int direction; // 1 = left, 2 = right
+
+        /** Constructs a new bat with the given location and width. */
+        constructor Bat new(int Ax, int Ay, int Awidth, int Aheight) {
+            let x = Ax;
+            let y = Ay;
+            let width = Awidth;
+            let height = Aheight;
+            let direction = 2;
+
+            do show();
+
+            return this;
+        }
+
+        /** Deallocates the object's memory. */
+        method void dispose() {
+            do Memory.deAlloc(this);
+            return;
+        }
+
+        /** Draws the bat on the screen. */
+        method void show() {
+            do Screen.setColor(true);
+            do draw();
+            return;
+        }
+
+        /** Erases the bat from the screen. */
+        method void hide() {
+            do Screen.setColor(false);
+            do draw();
+            return;
+        }
+
+        /** Draws the bat. */
+        method void draw() {
+            do Screen.drawRectangle(x, y, x + width, y + height);
+            return;
+        }
+
+        /** Sets the direction of the bat (0=stop, 1=left, 2=right). */
+        method void setDirection(int Adirection) {
+            let direction = Adirection;
+            return;
+        }
+
+        /** Returns the left edge of the bat. */
+        method int getLeft() {
+            return x;
+        }
+
+        /** Returns the right edge of the bat. */
+        method int getRight() {
+            return x + width;
+        }
+
+        /** Sets the width. */
+        method void setWidth(int Awidth) {
+            do hide();
+            let width = Awidth;
+            do show();
+            return;
+        }
+
+        /** Moves the bat one step in its direction. */
+        method void move() {
+            if (direction = 1) {
+                let x = x - 4;
+                if (x < 0) {
+                    let x = 0;
+                }
+                do Screen.setColor(false);
+                do Screen.drawRectangle((x + width) + 1, y, (x + width) + 4, y + height);
+                do Screen.setColor(true);
+                do Screen.drawRectangle(x, y, x + 3, y + height);
+            }
+            else {
+                let x = x + 4;
+                if ((x + width) > 511) {
+                    let x = 511 - width;
+                }
+                do Screen.setColor(false);
+                do Screen.drawRectangle(x - 4, y, x - 1, y + height);
+                do Screen.setColor(true);
+                do Screen.drawRectangle((x + width) - 3, y, x + width, y + height);
+            }
+
+            return;
+        }
+    }
+    JACK
+  }
+  let(:pong_bat_vm_code) {
+    <<-VM
+function Bat.new 0
+push constant 5
+call Memory.alloc 1
+pop pointer 0
+push argument 0
+pop this 0
+push argument 1
+pop this 1
+push argument 2
+pop this 2
+push argument 3
+pop this 3
+push constant 2
+pop this 4
+push pointer 0
+call Bat.show 1
+pop temp 0
+push pointer 0
+return
+function Bat.dispose 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
+function Bat.show 0
+push argument 0
+pop pointer 0
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push pointer 0
+call Bat.draw 1
+pop temp 0
+push constant 0
+return
+function Bat.hide 0
+push argument 0
+pop pointer 0
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push pointer 0
+call Bat.draw 1
+pop temp 0
+push constant 0
+return
+function Bat.draw 0
+push argument 0
+pop pointer 0
+push this 0
+push this 1
+push this 0
+push this 2
+add
+push this 1
+push this 3
+add
+call Screen.drawRectangle 4
+pop temp 0
+push constant 0
+return
+function Bat.setDirection 0
+push argument 0
+pop pointer 0
+push argument 1
+pop this 4
+push constant 0
+return
+function Bat.getLeft 0
+push argument 0
+pop pointer 0
+push this 0
+return
+function Bat.getRight 0
+push argument 0
+pop pointer 0
+push this 0
+push this 2
+add
+return
+function Bat.setWidth 0
+push argument 0
+pop pointer 0
+push pointer 0
+call Bat.hide 1
+pop temp 0
+push argument 1
+pop this 2
+push pointer 0
+call Bat.show 1
+pop temp 0
+push constant 0
+return
+function Bat.move 0
+push argument 0
+pop pointer 0
+push this 4
+push constant 1
+eq
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push this 0
+push constant 4
+sub
+pop this 0
+push this 0
+push constant 0
+lt
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push constant 0
+pop this 0
+label IF_FALSE1
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push this 0
+push this 2
+add
+push constant 1
+add
+push this 1
+push this 0
+push this 2
+add
+push constant 4
+add
+push this 1
+push this 3
+add
+call Screen.drawRectangle 4
+pop temp 0
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push this 0
+push this 1
+push this 0
+push constant 3
+add
+push this 1
+push this 3
+add
+call Screen.drawRectangle 4
+pop temp 0
+goto IF_END0
+label IF_FALSE0
+push this 0
+push constant 4
+add
+pop this 0
+push this 0
+push this 2
+add
+push constant 511
+gt
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push constant 511
+push this 2
+sub
+pop this 0
+label IF_FALSE2
+push constant 0
+call Screen.setColor 1
+pop temp 0
+push this 0
+push constant 4
+sub
+push this 1
+push this 0
+push constant 1
+sub
+push this 1
+push this 3
+add
+call Screen.drawRectangle 4
+pop temp 0
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push this 0
+push this 2
+add
+push constant 3
+sub
+push this 1
+push this 0
+push this 2
+add
+push this 1
+push this 3
+add
+call Screen.drawRectangle 4
+pop temp 0
+label IF_END0
 push constant 0
 return
     VM

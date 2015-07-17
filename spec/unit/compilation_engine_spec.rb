@@ -11,7 +11,82 @@ RSpec.describe CompilationEngine do
     compilation_engine = CompilationEngine.new(tokenizer, output)
     compilation_engine.compile_class
 
-    expect(compiled_vm_code).to eq(<<-VM)
+    expect(compiled_vm_code).to eq(seven_vm_code)
+  end
+
+  it 'compiles the ConvertToBin programm correctly' do
+    tokenizer = Tokenizer.new(convert_to_bin_jack_source)
+    compilation_engine = CompilationEngine.new(tokenizer, output)
+    compilation_engine.compile_class
+
+    expect(compiled_vm_code).to eq(convert_to_bin_vm_code)
+  end
+
+  context 'Square program' do
+    it 'compiles the main file correctly' do
+      tokenizer = Tokenizer.new(square_main_jack_source)
+      compilation_engine = CompilationEngine.new(tokenizer, output)
+      compilation_engine.compile_class
+
+      expect(compiled_vm_code).to eq(square_main_vm_code)
+    end
+
+    it 'compiles the square file correctly' do
+      tokenizer = Tokenizer.new(square_square_source)
+      compilation_engine = CompilationEngine.new(tokenizer, output)
+      compilation_engine.compile_class
+
+      expect(compiled_vm_code).to eq(square_square_vm_code)
+    end
+
+    it 'compiles the squaregame file correctly' do
+      tokenizer = Tokenizer.new(square_squaregame_jack_source)
+      compilation_engine = CompilationEngine.new(tokenizer, output)
+      compilation_engine.compile_class
+
+      expect(compiled_vm_code).to eq(square_squaregame_vm_code)
+    end
+  end
+
+  it 'compiles the Average programm correctly' do
+    tokenizer = Tokenizer.new(average_jack_source)
+    compilation_engine = CompilationEngine.new(tokenizer, output)
+    compilation_engine.compile_class
+
+    expect(compiled_vm_code).to eq(average_vm_code)
+  end
+
+  it 'compiles the ComplexArrays programm correctly' do
+    tokenizer = Tokenizer.new(complex_arrays_jack_source)
+    compilation_engine = CompilationEngine.new(tokenizer, output)
+    compilation_engine.compile_class
+
+    expect(compiled_vm_code).to eq(complex_arrays_vm_code)
+  end
+
+  let(:seven_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/11/Seven/Main.jack
+
+    /**
+     * Computes the value of 1 + (2 * 3) and prints the result
+     *  at the top-left of the screen.
+     */
+    class Main {
+
+       function void main() {
+           do Output.printInt(1 + (2 * 3));
+           return;
+       }
+
+    }
+    JACK
+  }
+  let(:seven_vm_code) {
+    <<-VM
 function Main.main 0
 push constant 1
 push constant 2
@@ -23,14 +98,103 @@ pop temp 0
 push constant 0
 return
     VM
-  end
+  }
 
-  it 'compiles the ConvertToBin programm correctly' do
-    tokenizer = Tokenizer.new(convert_to_bin_source)
-    compilation_engine = CompilationEngine.new(tokenizer, output)
-    compilation_engine.compile_class
+  let(:convert_to_bin_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/11/ConvertToBin/Main.jack
 
-    expect(compiled_vm_code).to eq(<<-VM)
+    /**
+     * Unpacks a 16-bit number into its binary representation:
+     * Takes the 16-bit number stored in RAM[8000] and stores its individual
+     * bits in RAM[8001..8016] (each location will contain 0 or 1).
+     * Before the conversion, RAM[8001]..RAM[8016] are initialized to -1.
+     *
+     * The program should be tested as follows:
+     * 1) Load the program into the supplied VM Emulator
+     * 2) Put some value in RAM[8000]
+     * 3) Switch to "no animation"
+     * 4) Run the program (give it enough time to run)
+     * 5) Stop the program
+     * 6) Check that RAM[8001]..RAM[8016] contains the correct binary result, and
+     *    that none of these memory locations contain -1.
+     */
+    class Main {
+
+        /**
+         * Initializes RAM[8001]..RAM[8016] to -1, and converts the value in
+         * RAM[8000] to binary.
+         */
+        function void main() {
+            var int result, value;
+
+            do Main.fillMemory(8001, 16, -1); // sets RAM[8001]..RAM[8016] to -1
+            let value = Memory.peek(8000);    // reads a value from RAM[8000]
+            do Main.convert(value);           // perform the conversion
+
+          return;
+        }
+
+        /** Converts the given decimal value to binary, and puts
+         *  the resulting bits in RAM[8001]..RAM[8016]. */
+        function void convert(int value) {
+          var int mask, position;
+          var boolean loop;
+
+          let loop = true;
+
+          while (loop) {
+              let position = position + 1;
+              let mask = Main.nextMask(mask);
+              do Memory.poke(9000 + position, mask);
+
+              if (~(position > 16)) {
+
+                  if (~((value & mask) = 0)) {
+                      do Memory.poke(8000 + position, 1);
+                  }
+                  else {
+                      do Memory.poke(8000 + position, 0);
+                  }
+              }
+              else {
+                  let loop = false;
+              }
+          }
+
+          return;
+        }
+
+        /** Returns the next mask (the mask that should follow the given mask). */
+        function int nextMask(int mask) {
+          if (mask = 0) {
+              return 1;
+          }
+          else {
+          return mask * 2;
+          }
+        }
+
+        /** Fills 'length' consecutive memory locations with 'value',
+          * starting at 'startAddress'. */
+        function void fillMemory(int startAddress, int length, int value) {
+            while (length > 0) {
+                do Memory.poke(startAddress, value);
+                let length = length - 1;
+                let startAddress = startAddress + 1;
+            }
+
+            return;
+        }
+    }
+
+    JACK
+  }
+  let(:convert_to_bin_vm_code) {
+    <<-VM
 function Main.main 2
 push constant 8001
 push constant 16
@@ -147,15 +311,263 @@ label WHILE_END0
 push constant 0
 return
     VM
-  end
+  }
 
-  context 'Square program' do
-    it 'compiles the main file correctly' do
-      tokenizer = Tokenizer.new(square_main_source)
-      compilation_engine = CompilationEngine.new(tokenizer, output)
-      compilation_engine.compile_class
+  let(:square_main_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/09/Square/Main.jack
 
-      expect(compiled_vm_code).to eq(<<-VM)
+    /**
+     * The Main class initializes a new Square Dance game and starts it.
+     */
+    class Main {
+
+        /** Initializes a new game and starts it. */
+        function void main() {
+            var SquareGame game;
+
+            let game = SquareGame.new();
+            do game.run();
+            do game.dispose();
+
+            return;
+        }
+    }
+    JACK
+  }
+  let(:square_square_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/09/Square/Square.jack
+
+    /**
+     * Implements a graphic square. A graphic square has a screen location
+     * and a size. It also has methods for drawing, erasing, moving on the
+     * screen, and changing its size.
+     */
+    class Square {
+
+        // Location on the screen
+        field int x, y;
+
+        // The size of the square
+        field int size;
+
+        /** Constructs a new square with a given location and size. */
+        constructor Square new(int Ax, int Ay, int Asize) {
+            let x = Ax;
+            let y = Ay;
+            let size = Asize;
+
+            do draw();
+
+            return this;
+        }
+
+        /** Deallocates the object's memory. */
+        method void dispose() {
+            do Memory.deAlloc(this);
+            return;
+        }
+
+        /** Draws the square on the screen. */
+        method void draw() {
+            do Screen.setColor(true);
+            do Screen.drawRectangle(x, y, x + size, y + size);
+            return;
+        }
+
+        /** Erases the square from the screen. */
+        method void erase() {
+            do Screen.setColor(false);
+            do Screen.drawRectangle(x, y, x + size, y + size);
+            return;
+        }
+
+        /** Increments the size by 2 pixels. */
+        method void incSize() {
+            if (((y + size) < 254) & ((x + size) < 510)) {
+                do erase();
+                let size = size + 2;
+                do draw();
+            }
+            return;
+        }
+
+        /** Decrements the size by 2 pixels. */
+        method void decSize() {
+            if (size > 2) {
+                do erase();
+                let size = size - 2;
+                do draw();
+            }
+            return;
+        }
+
+        /** Moves up by 2 pixels. */
+        method void moveUp() {
+            if (y > 1) {
+                do Screen.setColor(false);
+                do Screen.drawRectangle(x, (y + size) - 1, x + size, y + size);
+                let y = y - 2;
+                do Screen.setColor(true);
+                do Screen.drawRectangle(x, y, x + size, y + 1);
+            }
+            return;
+        }
+
+        /** Moves down by 2 pixels. */
+        method void moveDown() {
+            if ((y + size) < 254) {
+                do Screen.setColor(false);
+                do Screen.drawRectangle(x, y, x + size, y + 1);
+                let y = y + 2;
+                do Screen.setColor(true);
+                do Screen.drawRectangle(x, (y + size) - 1, x + size, y + size);
+            }
+            return;
+        }
+
+        /** Moves left by 2 pixels. */
+        method void moveLeft() {
+            if (x > 1) {
+                do Screen.setColor(false);
+                do Screen.drawRectangle((x + size) - 1, y, x + size, y + size);
+                let x = x - 2;
+                do Screen.setColor(true);
+                do Screen.drawRectangle(x, y, x + 1, y + size);
+            }
+            return;
+        }
+
+        /** Moves right by 2 pixels. */
+        method void moveRight() {
+            if ((x + size) < 510) {
+                do Screen.setColor(false);
+                do Screen.drawRectangle(x, y, x + 1, y + size);
+                let x = x + 2;
+                do Screen.setColor(true);
+                do Screen.drawRectangle((x + size) - 1, y, x + size, y + size);
+            }
+            return;
+        }
+    }
+    JACK
+  }
+  let(:square_squaregame_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/09/Square/SquareGame.jack
+
+    /**
+     * Implements the Square Dance game.
+     * In this game you can move a black square around the screen and
+     * change its size during the movement.
+     * In the beginning, the square is located at the top-left corner
+     * of the screen. The arrow keys are used to move the square.
+     * The 'z' & 'x' keys are used to decrement and increment the size.
+     * The 'q' key is used to quit the game.
+     */
+    class SquareGame {
+
+        // The square
+        field Square square;
+
+        // The square's movement direction
+        field int direction; // 0=none,1=up,2=down,3=left,4=right
+
+        /** Constructs a new Square Game. */
+        constructor SquareGame new() {
+            let square = Square.new(0, 0, 30);
+            let direction = 0;
+
+            return this;
+        }
+
+        /** Deallocates the object's memory. */
+        method void dispose() {
+            do square.dispose();
+            do Memory.deAlloc(this);
+            return;
+        }
+
+        /** Starts the game. Handles inputs from the user that control
+         *  the square's movement, direction and size. */
+        method void run() {
+            var char key;
+            var boolean exit;
+
+            let exit = false;
+
+            while (~exit) {
+                // waits for a key to be pressed.
+                while (key = 0) {
+                    let key = Keyboard.keyPressed();
+                    do moveSquare();
+                }
+
+                if (key = 81) {
+                    let exit = true;
+                }
+                if (key = 90) {
+                    do square.decSize();
+                }
+                if (key = 88) {
+                    do square.incSize();
+                }
+                if (key = 131) {
+                    let direction = 1;
+                }
+                if (key = 133) {
+                    let direction = 2;
+                }
+                if (key = 130) {
+                    let direction = 3;
+                }
+                if (key = 132) {
+                    let direction = 4;
+                }
+
+                // waits for the key to be released.
+                while (~(key = 0)) {
+                    let key = Keyboard.keyPressed();
+                    do moveSquare();
+                }
+            }
+
+            return;
+        }
+
+        /** Moves the square by 2 pixels in the current direction. */
+        method void moveSquare() {
+            if (direction = 1) {
+                do square.moveUp();
+            }
+            if (direction = 2) {
+                do square.moveDown();
+            }
+            if (direction = 3) {
+                do square.moveLeft();
+            }
+            if (direction = 4) {
+                do square.moveRight();
+            }
+
+            do Sys.wait(5); // Delays the next movement.
+            return;
+        }
+    }
+    JACK
+  }
+  let(:square_main_vm_code) {
+    <<-VM
 function Main.main 1
 call SquareGame.new 0
 pop local 0
@@ -167,15 +579,10 @@ call SquareGame.dispose 1
 pop temp 0
 push constant 0
 return
-      VM
-    end
-
-    it 'compiles the square file correctly' do
-      tokenizer = Tokenizer.new(square_square_source)
-      compilation_engine = CompilationEngine.new(tokenizer, output)
-      compilation_engine.compile_class
-
-      expect(compiled_vm_code).to eq(<<-VM)
+    VM
+  }
+  let(:square_square_vm_code) {
+    <<-VM
 function Square.new 0
 push constant 3
 call Memory.alloc 1
@@ -480,15 +887,10 @@ pop temp 0
 label IF_FALSE0
 push constant 0
 return
-      VM
-    end
-
-    it 'compiles the squaregame file correctly' do
-      tokenizer = Tokenizer.new(square_squaregame_source)
-      compilation_engine = CompilationEngine.new(tokenizer, output)
-      compilation_engine.compile_class
-
-      expect(compiled_vm_code).to eq(<<-VM)
+    VM
+  }
+  let(:square_squaregame_vm_code) {
+    <<-VM
 function SquareGame.new 0
 push constant 2
 call Memory.alloc 1
@@ -668,16 +1070,51 @@ call Sys.wait 1
 pop temp 0
 push constant 0
 return
-      VM
-    end
-  end
+    VM
+  }
 
-  it 'compiles the Average programm correctly' do
-    tokenizer = Tokenizer.new(average_source)
-    compilation_engine = CompilationEngine.new(tokenizer, output)
-    compilation_engine.compile_class
+  let(:average_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/11/Average/Main.jack
 
-    expect(compiled_vm_code).to eq(<<-VM)
+    /** Computes the average of a sequence of integers */
+    class Main {
+        function void main() {
+            var Array a;
+            var int length;
+            var int i, sum;
+
+            let length = Keyboard.readInt("How many numbers? ");
+            let a = Array.new(length);
+            let i = 0;
+
+            while (i < length) {
+                let a[i] = Keyboard.readInt("Enter the next number: ");
+                let i = i + 1;
+            }
+
+            let i = 0;
+            let sum = 0;
+
+            while (i < length) {
+                let sum = sum + a[i];
+                let i = i + 1;
+            }
+
+            do Output.printString("The average is: ");
+            do Output.printInt(sum / length);
+            do Output.println();
+
+            return;
+        }
+    }
+    JACK
+  }
+  let(:average_vm_code) {
+    <<-VM
 function Main.main 4
 push constant 18
 call String.new 1
@@ -862,14 +1299,87 @@ pop temp 0
 push constant 0
 return
     VM
-  end
+  }
 
-  it 'compiles the ComplexArrays programm correctly' do
-    tokenizer = Tokenizer.new(complex_arrays_source)
-    compilation_engine = CompilationEngine.new(tokenizer, output)
-    compilation_engine.compile_class
+  let(:complex_arrays_jack_source) {
+    <<-JACK
+    // This file is part of www.nand2tetris.org
+    // and the book "The Elements of Computing Systems"
+    // by Nisan and Schocken, MIT Press.
+    // File name: projects/11/ComplexArrays/Main.jack
 
-    expect(compiled_vm_code).to eq(<<-VM)
+    /**
+     * Performs several complex Array tests.
+     * For each test, the required result is printed along with the
+     * actual result. In each test, the two results should be equal.
+     */
+    class Main {
+
+        function void main() {
+            var Array a, b, c;
+
+            let a = Array.new(10);
+            let b = Array.new(5);
+            let c = Array.new(1);
+
+            let a[3] = 2;
+            let a[4] = 8;
+            let a[5] = 4;
+            let b[a[3]] = a[3] + 3;  // b[2] = 5
+            let a[b[a[3]]] = a[a[5]] * b[((7 - a[3]) - Main.double(2)) + 1];  // a[5] = 8 * 5 = 40
+            let c[0] = null;
+            let c = c[0];
+
+            do Output.printString("Test 1 - Required result: 5, Actual result: ");
+            do Output.printInt(b[2]);
+            do Output.println();
+            do Output.printString("Test 2 - Required result: 40, Actual result: ");
+            do Output.printInt(a[5]);
+            do Output.println();
+            do Output.printString("Test 3 - Required result: 0, Actual result: ");
+            do Output.printInt(c);
+            do Output.println();
+
+            let c = null;
+
+            if (c = null) {
+                do Main.fill(a, 10);
+                let c = a[3];
+                let c[1] = 33;
+                let c = a[7];
+                let c[1] = 77;
+                let b = a[3];
+                let b[1] = b[1] + c[1];  // b[1] = 33 + 77 = 110;
+            }
+
+            do Output.printString("Test 4 - Required result: 77, Actual result: ");
+            do Output.printInt(c[1]);
+            do Output.println();
+            do Output.printString("Test 5 - Required result: 110, Actual result: ");
+            do Output.printInt(b[1]);
+            do Output.println();
+
+            return;
+        }
+
+        function int double(int a) {
+            return a * 2;
+        }
+
+        function void fill(Array a, int size) {
+            while (size > 0) {
+                let size = size - 1;
+                let a[size] = Array.new(3);
+            }
+
+            return;
+        }
+    }
+
+    JACK
+  }
+  let(:complex_arrays_vm_code) {
+    <<-VM
 function Main.main 3
 push constant 10
 call Array.new 1
@@ -1583,495 +2093,5 @@ label WHILE_END0
 push constant 0
 return
     VM
-  end
-
-
-  let(:seven_jack_source) {
-    <<-JACK
-    // This file is part of www.nand2tetris.org
-    // and the book "The Elements of Computing Systems"
-    // by Nisan and Schocken, MIT Press.
-    // File name: projects/11/Seven/Main.jack
-
-    /**
-     * Computes the value of 1 + (2 * 3) and prints the result
-     *  at the top-left of the screen.
-     */
-    class Main {
-
-       function void main() {
-           do Output.printInt(1 + (2 * 3));
-           return;
-       }
-
-    }
-    JACK
-  }
-
-  let(:convert_to_bin_source) {
-    <<-JACK
-    // This file is part of www.nand2tetris.org
-    // and the book "The Elements of Computing Systems"
-    // by Nisan and Schocken, MIT Press.
-    // File name: projects/11/ConvertToBin/Main.jack
-
-    /**
-     * Unpacks a 16-bit number into its binary representation:
-     * Takes the 16-bit number stored in RAM[8000] and stores its individual
-     * bits in RAM[8001..8016] (each location will contain 0 or 1).
-     * Before the conversion, RAM[8001]..RAM[8016] are initialized to -1.
-     *
-     * The program should be tested as follows:
-     * 1) Load the program into the supplied VM Emulator
-     * 2) Put some value in RAM[8000]
-     * 3) Switch to "no animation"
-     * 4) Run the program (give it enough time to run)
-     * 5) Stop the program
-     * 6) Check that RAM[8001]..RAM[8016] contains the correct binary result, and
-     *    that none of these memory locations contain -1.
-     */
-    class Main {
-
-        /**
-         * Initializes RAM[8001]..RAM[8016] to -1, and converts the value in
-         * RAM[8000] to binary.
-         */
-        function void main() {
-            var int result, value;
-
-            do Main.fillMemory(8001, 16, -1); // sets RAM[8001]..RAM[8016] to -1
-            let value = Memory.peek(8000);    // reads a value from RAM[8000]
-            do Main.convert(value);           // perform the conversion
-
-          return;
-        }
-
-        /** Converts the given decimal value to binary, and puts
-         *  the resulting bits in RAM[8001]..RAM[8016]. */
-        function void convert(int value) {
-          var int mask, position;
-          var boolean loop;
-
-          let loop = true;
-
-          while (loop) {
-              let position = position + 1;
-              let mask = Main.nextMask(mask);
-              do Memory.poke(9000 + position, mask);
-
-              if (~(position > 16)) {
-
-                  if (~((value & mask) = 0)) {
-                      do Memory.poke(8000 + position, 1);
-                  }
-                  else {
-                      do Memory.poke(8000 + position, 0);
-                  }
-              }
-              else {
-                  let loop = false;
-              }
-          }
-
-          return;
-        }
-
-        /** Returns the next mask (the mask that should follow the given mask). */
-        function int nextMask(int mask) {
-          if (mask = 0) {
-              return 1;
-          }
-          else {
-          return mask * 2;
-          }
-        }
-
-        /** Fills 'length' consecutive memory locations with 'value',
-          * starting at 'startAddress'. */
-        function void fillMemory(int startAddress, int length, int value) {
-            while (length > 0) {
-                do Memory.poke(startAddress, value);
-                let length = length - 1;
-                let startAddress = startAddress + 1;
-            }
-
-            return;
-        }
-    }
-
-    JACK
-  }
-
-  let(:square_main_source) {
-    <<-JACK
-    // This file is part of www.nand2tetris.org
-    // and the book "The Elements of Computing Systems"
-    // by Nisan and Schocken, MIT Press.
-    // File name: projects/09/Square/Main.jack
-
-    /**
-     * The Main class initializes a new Square Dance game and starts it.
-     */
-    class Main {
-
-        /** Initializes a new game and starts it. */
-        function void main() {
-            var SquareGame game;
-
-            let game = SquareGame.new();
-            do game.run();
-            do game.dispose();
-
-            return;
-        }
-    }
-    JACK
-  }
-  let(:square_square_source) {
-    <<-JACK
-    // This file is part of www.nand2tetris.org
-    // and the book "The Elements of Computing Systems"
-    // by Nisan and Schocken, MIT Press.
-    // File name: projects/09/Square/Square.jack
-
-    /**
-     * Implements a graphic square. A graphic square has a screen location
-     * and a size. It also has methods for drawing, erasing, moving on the
-     * screen, and changing its size.
-     */
-    class Square {
-
-        // Location on the screen
-        field int x, y;
-
-        // The size of the square
-        field int size;
-
-        /** Constructs a new square with a given location and size. */
-        constructor Square new(int Ax, int Ay, int Asize) {
-            let x = Ax;
-            let y = Ay;
-            let size = Asize;
-
-            do draw();
-
-            return this;
-        }
-
-        /** Deallocates the object's memory. */
-        method void dispose() {
-            do Memory.deAlloc(this);
-            return;
-        }
-
-        /** Draws the square on the screen. */
-        method void draw() {
-            do Screen.setColor(true);
-            do Screen.drawRectangle(x, y, x + size, y + size);
-            return;
-        }
-
-        /** Erases the square from the screen. */
-        method void erase() {
-            do Screen.setColor(false);
-            do Screen.drawRectangle(x, y, x + size, y + size);
-            return;
-        }
-
-        /** Increments the size by 2 pixels. */
-        method void incSize() {
-            if (((y + size) < 254) & ((x + size) < 510)) {
-                do erase();
-                let size = size + 2;
-                do draw();
-            }
-            return;
-        }
-
-        /** Decrements the size by 2 pixels. */
-        method void decSize() {
-            if (size > 2) {
-                do erase();
-                let size = size - 2;
-                do draw();
-            }
-            return;
-        }
-
-        /** Moves up by 2 pixels. */
-        method void moveUp() {
-            if (y > 1) {
-                do Screen.setColor(false);
-                do Screen.drawRectangle(x, (y + size) - 1, x + size, y + size);
-                let y = y - 2;
-                do Screen.setColor(true);
-                do Screen.drawRectangle(x, y, x + size, y + 1);
-            }
-            return;
-        }
-
-        /** Moves down by 2 pixels. */
-        method void moveDown() {
-            if ((y + size) < 254) {
-                do Screen.setColor(false);
-                do Screen.drawRectangle(x, y, x + size, y + 1);
-                let y = y + 2;
-                do Screen.setColor(true);
-                do Screen.drawRectangle(x, (y + size) - 1, x + size, y + size);
-            }
-            return;
-        }
-
-        /** Moves left by 2 pixels. */
-        method void moveLeft() {
-            if (x > 1) {
-                do Screen.setColor(false);
-                do Screen.drawRectangle((x + size) - 1, y, x + size, y + size);
-                let x = x - 2;
-                do Screen.setColor(true);
-                do Screen.drawRectangle(x, y, x + 1, y + size);
-            }
-            return;
-        }
-
-        /** Moves right by 2 pixels. */
-        method void moveRight() {
-            if ((x + size) < 510) {
-                do Screen.setColor(false);
-                do Screen.drawRectangle(x, y, x + 1, y + size);
-                let x = x + 2;
-                do Screen.setColor(true);
-                do Screen.drawRectangle((x + size) - 1, y, x + size, y + size);
-            }
-            return;
-        }
-    }
-    JACK
-  }
-  let(:square_squaregame_source) {
-    <<-JACK
-    // This file is part of www.nand2tetris.org
-    // and the book "The Elements of Computing Systems"
-    // by Nisan and Schocken, MIT Press.
-    // File name: projects/09/Square/SquareGame.jack
-
-    /**
-     * Implements the Square Dance game.
-     * In this game you can move a black square around the screen and
-     * change its size during the movement.
-     * In the beginning, the square is located at the top-left corner
-     * of the screen. The arrow keys are used to move the square.
-     * The 'z' & 'x' keys are used to decrement and increment the size.
-     * The 'q' key is used to quit the game.
-     */
-    class SquareGame {
-
-        // The square
-        field Square square;
-
-        // The square's movement direction
-        field int direction; // 0=none,1=up,2=down,3=left,4=right
-
-        /** Constructs a new Square Game. */
-        constructor SquareGame new() {
-            let square = Square.new(0, 0, 30);
-            let direction = 0;
-
-            return this;
-        }
-
-        /** Deallocates the object's memory. */
-        method void dispose() {
-            do square.dispose();
-            do Memory.deAlloc(this);
-            return;
-        }
-
-        /** Starts the game. Handles inputs from the user that control
-         *  the square's movement, direction and size. */
-        method void run() {
-            var char key;
-            var boolean exit;
-
-            let exit = false;
-
-            while (~exit) {
-                // waits for a key to be pressed.
-                while (key = 0) {
-                    let key = Keyboard.keyPressed();
-                    do moveSquare();
-                }
-
-                if (key = 81) {
-                    let exit = true;
-                }
-                if (key = 90) {
-                    do square.decSize();
-                }
-                if (key = 88) {
-                    do square.incSize();
-                }
-                if (key = 131) {
-                    let direction = 1;
-                }
-                if (key = 133) {
-                    let direction = 2;
-                }
-                if (key = 130) {
-                    let direction = 3;
-                }
-                if (key = 132) {
-                    let direction = 4;
-                }
-
-                // waits for the key to be released.
-                while (~(key = 0)) {
-                    let key = Keyboard.keyPressed();
-                    do moveSquare();
-                }
-            }
-
-            return;
-        }
-
-        /** Moves the square by 2 pixels in the current direction. */
-        method void moveSquare() {
-            if (direction = 1) {
-                do square.moveUp();
-            }
-            if (direction = 2) {
-                do square.moveDown();
-            }
-            if (direction = 3) {
-                do square.moveLeft();
-            }
-            if (direction = 4) {
-                do square.moveRight();
-            }
-
-            do Sys.wait(5); // Delays the next movement.
-            return;
-        }
-    }
-    JACK
-  }
-
-  let(:average_source) {
-    <<-JACK
-    // This file is part of www.nand2tetris.org
-    // and the book "The Elements of Computing Systems"
-    // by Nisan and Schocken, MIT Press.
-    // File name: projects/11/Average/Main.jack
-
-    /** Computes the average of a sequence of integers */
-    class Main {
-        function void main() {
-            var Array a;
-            var int length;
-            var int i, sum;
-
-            let length = Keyboard.readInt("How many numbers? ");
-            let a = Array.new(length);
-            let i = 0;
-
-            while (i < length) {
-                let a[i] = Keyboard.readInt("Enter the next number: ");
-                let i = i + 1;
-            }
-
-            let i = 0;
-            let sum = 0;
-
-            while (i < length) {
-                let sum = sum + a[i];
-                let i = i + 1;
-            }
-
-            do Output.printString("The average is: ");
-            do Output.printInt(sum / length);
-            do Output.println();
-
-            return;
-        }
-    }
-    JACK
-  }
-
-  let(:complex_arrays_source) {
-    <<-JACK
-    // This file is part of www.nand2tetris.org
-    // and the book "The Elements of Computing Systems"
-    // by Nisan and Schocken, MIT Press.
-    // File name: projects/11/ComplexArrays/Main.jack
-
-    /**
-     * Performs several complex Array tests.
-     * For each test, the required result is printed along with the
-     * actual result. In each test, the two results should be equal.
-     */
-    class Main {
-
-        function void main() {
-            var Array a, b, c;
-
-            let a = Array.new(10);
-            let b = Array.new(5);
-            let c = Array.new(1);
-
-            let a[3] = 2;
-            let a[4] = 8;
-            let a[5] = 4;
-            let b[a[3]] = a[3] + 3;  // b[2] = 5
-            let a[b[a[3]]] = a[a[5]] * b[((7 - a[3]) - Main.double(2)) + 1];  // a[5] = 8 * 5 = 40
-            let c[0] = null;
-            let c = c[0];
-
-            do Output.printString("Test 1 - Required result: 5, Actual result: ");
-            do Output.printInt(b[2]);
-            do Output.println();
-            do Output.printString("Test 2 - Required result: 40, Actual result: ");
-            do Output.printInt(a[5]);
-            do Output.println();
-            do Output.printString("Test 3 - Required result: 0, Actual result: ");
-            do Output.printInt(c);
-            do Output.println();
-
-            let c = null;
-
-            if (c = null) {
-                do Main.fill(a, 10);
-                let c = a[3];
-                let c[1] = 33;
-                let c = a[7];
-                let c[1] = 77;
-                let b = a[3];
-                let b[1] = b[1] + c[1];  // b[1] = 33 + 77 = 110;
-            }
-
-            do Output.printString("Test 4 - Required result: 77, Actual result: ");
-            do Output.printInt(c[1]);
-            do Output.println();
-            do Output.printString("Test 5 - Required result: 110, Actual result: ");
-            do Output.printInt(b[1]);
-            do Output.println();
-
-            return;
-        }
-
-        function int double(int a) {
-            return a * 2;
-        }
-
-        function void fill(Array a, int size) {
-            while (size > 0) {
-                let size = size - 1;
-                let a[size] = Array.new(3);
-            }
-
-            return;
-        }
-    }
-
-    JACK
   }
 end

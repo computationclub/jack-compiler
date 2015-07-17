@@ -131,6 +131,24 @@ push that 0
       ).when_parsed_as :expression
     end
 
+    it 'emits VM code for array references in expressions' do
+      symbol_table.define('a', :int, :static)
+
+      expect(
+        'a[1] + 2'
+      ).to be_parsed_into(
+        <<-VM
+push constant 1
+push static 0
+add
+pop pointer 1
+push that 0
+push constant 2
+add
+        VM
+      ).when_parsed_as :expression
+    end
+
     it 'emits VM code for binary expressions' do
       expect(
         '1 + 1'
@@ -345,6 +363,28 @@ call Screen.drawPixel 2
       ).when_parsed_as :expression
     end
 
+    it 'emits VM code for calling external methods with array references' do
+      symbol_table.define('point', 'Array', :var)
+
+      expect(
+        'Screen.drawPixel(point[0], point[1])'
+      ).to be_parsed_into(
+        <<-VM
+push constant 0
+push local 0
+add
+pop pointer 1
+push that 0
+push constant 1
+push local 0
+add
+pop pointer 1
+push that 0
+call Screen.drawPixel 2
+        VM
+      ).when_parsed_as :expression
+    end
+
     it 'emits VM code for calling external methods with multiple arguments' do
       expect(
         'Screen.drawPixel(4, 5)'
@@ -440,6 +480,29 @@ push constant 4
 neg
 push constant 5
 neg
+call FunTimes.woah 3
+        VM
+      ).when_parsed_as :expression
+    end
+
+    it 'emits VM code for calling internal methods with array references' do
+      symbol_table.define('exclamation', 'Array', :var)
+
+      expect(
+        'woah(exclamation[0], exclamation[1])'
+      ).to be_parsed_into(
+        <<-VM
+push pointer 0
+push constant 0
+push local 0
+add
+pop pointer 1
+push that 0
+push constant 1
+push local 0
+add
+pop pointer 1
+push that 0
 call FunTimes.woah 3
         VM
       ).when_parsed_as :expression
@@ -521,6 +584,28 @@ call Screen.drawPixel 2
       ).when_parsed_as :subroutine_call
     end
 
+    it 'emits VM code for calling external methods with array references' do
+      symbol_table.define('point', 'Array', :var)
+
+      expect(
+        'Screen.drawPixel(point[0], point[1])'
+      ).to be_parsed_into(
+        <<-VM
+push constant 0
+push local 0
+add
+pop pointer 1
+push that 0
+push constant 1
+push local 0
+add
+pop pointer 1
+push that 0
+call Screen.drawPixel 2
+        VM
+      ).when_parsed_as :subroutine_call
+    end
+
     it 'emits VM code for calling external methods with multiple arguments' do
       expect(
         'Screen.drawPixel(4, 5)'
@@ -616,6 +701,29 @@ push constant 4
 neg
 push constant 5
 neg
+call FunTimes.woah 3
+        VM
+      ).when_parsed_as :subroutine_call
+    end
+
+    it 'emits VM code for calling internal methods with array references' do
+      symbol_table.define('exclamation', 'Array', :var)
+
+      expect(
+        'woah(exclamation[0], exclamation[1])'
+      ).to be_parsed_into(
+        <<-VM
+push pointer 0
+push constant 0
+push local 0
+add
+pop pointer 1
+push that 0
+push constant 1
+push local 0
+add
+pop pointer 1
+push that 0
 call FunTimes.woah 3
         VM
       ).when_parsed_as :subroutine_call

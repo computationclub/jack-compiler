@@ -169,10 +169,6 @@ class ExpressionParser
   def parse_expression
     left_node = parse_term
 
-    return left_node unless tokenizer.has_more_tokens?
-
-    tokenizer.advance
-
     if (tokenizer.token_type == Tokenizer::SYMBOL) && (%w[+ - * / & | < > =].include?(tokenizer.symbol))
       operation = tokenizer.symbol
       tokenizer.advance
@@ -192,46 +188,17 @@ class ExpressionParser
         method_name = left_node.value
         parse_method_call(method_name: method_name)
       end
-    elsif (tokenizer.token_type == Tokenizer::SYMBOL) && tokenizer.symbol == '['
-      tokenizer.advance
-      array_variable = left_node
-      index_expression = parse_expression
-
-      fail 'must close array reference' unless (tokenizer.token_type == Tokenizer::SYMBOL) && tokenizer.symbol == ']'
-      tokenizer.advance if tokenizer.has_more_tokens?
-
-      ArrayReference.new(array_variable, index_expression)
     else
       left_node
     end
   end
 
   def parse_term
-    case tokenizer.token_type
-    when Tokenizer::INT_CONST
-      number = tokenizer.int_val
+    term = parse_simple_term
 
-      Number.new(number)
-    when Tokenizer::STRING_CONST
-      string = tokenizer.string_val
+    return term unless tokenizer.has_more_tokens?
 
-      String.new(string)
-    when Tokenizer::IDENTIFIER
-      identifier = tokenizer.identifier
-
-      Variable.new(identifier)
-    when Tokenizer::KEYWORD
-      keyword = tokenizer.keyword
-
-      Keyword.new(keyword)
-    when Tokenizer::SYMBOL
-      case tokenizer.symbol
-      when '('
-        parse_nested_expression
-      when '-', '~'
-        parse_unary_operation
-      end
-    end
+    parse_array_reference_term(term)
   end
 
   def parse_subroutine_call
@@ -250,6 +217,49 @@ class ExpressionParser
 
   private
 
+  def parse_simple_term
+    case tokenizer.token_type
+    when Tokenizer::INT_CONST
+      number = tokenizer.int_val
+      tokenizer.advance if tokenizer.has_more_tokens?
+      Number.new(number)
+    when Tokenizer::STRING_CONST
+      string = tokenizer.string_val
+      tokenizer.advance if tokenizer.has_more_tokens?
+      String.new(string)
+    when Tokenizer::IDENTIFIER
+      identifier = tokenizer.identifier
+      tokenizer.advance if tokenizer.has_more_tokens?
+      Variable.new(identifier)
+    when Tokenizer::KEYWORD
+      keyword = tokenizer.keyword
+      tokenizer.advance if tokenizer.has_more_tokens?
+      Keyword.new(keyword)
+    when Tokenizer::SYMBOL
+      case tokenizer.symbol
+      when '('
+        parse_nested_expression
+      when '-', '~'
+        parse_unary_operation
+      end
+    end
+  end
+
+  def parse_array_reference_term(term)
+    if (tokenizer.token_type == Tokenizer::SYMBOL) && tokenizer.symbol == '['
+      tokenizer.advance
+      array_variable = term
+      index_expression = parse_expression
+
+      fail 'must close array reference' unless (tokenizer.token_type == Tokenizer::SYMBOL) && tokenizer.symbol == ']'
+      tokenizer.advance if tokenizer.has_more_tokens?
+
+      ArrayReference.new(array_variable, index_expression)
+    else
+      term
+    end
+  end
+
   def parse_unary_operation
     fail 'Not a supported unary operation' unless %w(- ~).include?(tokenizer.symbol)
     operation = tokenizer.symbol
@@ -266,7 +276,7 @@ class ExpressionParser
     node = parse_expression
 
     fail 'Not a closing parenthesis' unless tokenizer.token_type == Tokenizer::SYMBOL && tokenizer.symbol == ')'
-
+    tokenizer.advance if tokenizer.has_more_tokens?
     node
   end
 

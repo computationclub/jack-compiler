@@ -11,9 +11,12 @@ class CompilationEngine
 
   JackMethod = Struct.new(:klass, :name, :method_type, :return_type, :argument_count, :local_var_count) do
     def emit(vm_writer)
-      vm_writer.write_function("#{klass.name}.#{name}", local_var_count)
+      vm_writer.write_function(full_name, local_var_count)
       emit_memory_allocation(vm_writer) if constructor?
       emit_setup_this_segment(vm_writer) if instance_method?
+    end
+    def full_name
+      "#{klass.name}.#{name}"
     end
     private
     def constructor?
@@ -92,6 +95,8 @@ class CompilationEngine
 
     return_type = current_token
     try_consume(Tokenizer::KEYWORD, 'void') || consume_type
+
+    @symbols.define('this', current_class.name, :arg) if method_type == 'method'
 
     method_name = current_token
     consume(Tokenizer::IDENTIFIER)

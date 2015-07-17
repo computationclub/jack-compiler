@@ -331,6 +331,20 @@ call Output.printInt 1
       ).when_parsed_as :expression
     end
 
+    it 'emits VM code for calling external methods with unary operations' do
+      expect(
+        'Screen.drawPixel(-4, -5)'
+      ).to be_parsed_into(
+        <<-VM
+push constant 4
+neg
+push constant 5
+neg
+call Screen.drawPixel 2
+        VM
+      ).when_parsed_as :expression
+    end
+
     it 'emits VM code for calling external methods with multiple arguments' do
       expect(
         'Screen.drawPixel(4, 5)'
@@ -416,6 +430,21 @@ call FunTimes.woah 2
       ).when_parsed_as :expression
     end
 
+    it 'emits VM code for calling internal methods with unary operations' do
+      expect(
+        'woah(-4, -5)'
+      ).to be_parsed_into(
+        <<-VM
+push pointer 0
+push constant 4
+neg
+push constant 5
+neg
+call FunTimes.woah 3
+        VM
+      ).when_parsed_as :expression
+    end
+
     it 'emits VM code for calling internal methods with multiple arguments' do
       expect(
         'woah(4, 5)'
@@ -478,18 +507,6 @@ call Output.printInt 1
       ).when_parsed_as :subroutine_call
     end
 
-    it 'emits VM code for calling external methods with a single argument' do
-      expect(
-        'Output.printInt(4)'
-      ).to be_parsed_into(
-        <<-VM
-push constant 4
-call Output.printInt 1
-        VM
-      ).when_parsed_as :subroutine_call
-    end
-
-
     it 'emits VM code for calling external methods with unary operations' do
       expect(
         'Screen.drawPixel(-4, -5)'
@@ -499,6 +516,18 @@ push constant 4
 neg
 push constant 5
 neg
+call Screen.drawPixel 2
+        VM
+      ).when_parsed_as :subroutine_call
+    end
+
+    it 'emits VM code for calling external methods with multiple arguments' do
+      expect(
+        'Screen.drawPixel(4, 5)'
+      ).to be_parsed_into(
+        <<-VM
+push constant 4
+push constant 5
 call Screen.drawPixel 2
         VM
       ).when_parsed_as :subroutine_call
@@ -573,6 +602,21 @@ call FunTimes.woah 1
 push pointer 0
 push constant 4
 call FunTimes.woah 2
+        VM
+      ).when_parsed_as :subroutine_call
+    end
+
+    it 'emits VM code for calling internal methods with unary operations' do
+      expect(
+        'woah(-4, -5)'
+      ).to be_parsed_into(
+        <<-VM
+push pointer 0
+push constant 4
+neg
+push constant 5
+neg
+call FunTimes.woah 3
         VM
       ).when_parsed_as :subroutine_call
     end

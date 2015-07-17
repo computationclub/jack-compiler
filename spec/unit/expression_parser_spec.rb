@@ -1,35 +1,13 @@
-require 'tokenizer'
 require 'expression_parser'
 require 'symbol_table'
 require 'compilation_engine'
+require_relative '../be_parsed_into_matcher'
 
 RSpec.describe ExpressionParser do
-  let(:output) { StringIO.new }
-  let(:vm_writer) { VMWriter.new(output) }
+  include BeParsedInto
+
   let(:symbol_table) { SymbolTable.new }
-  let(:klass) { CompilationEngine::JackClass.new('FunTimes', 1) }
-  let(:emitted_vm_code) { output.string }
-
-  def build_tokenizer(input_expression)
-    Tokenizer.new(input_expression).tap { |t| t.advance }
-  end
-
-  RSpec::Matchers.define :be_parsed_into do |expected_vm_code|
-    match do |jack_code|
-      ExpressionParser.new(build_tokenizer(jack_code))
-        .send(parse_method)
-        .emit(vm_writer, symbol_table, klass)
-      emitted_vm_code == expected_vm_code
-    end
-    chain :when_parsed_as, :parse_type
-    failure_message do |actual|
-      "expected: \"#{expected_vm_code.chomp}\"\n"\
-      "     got: \"#{emitted_vm_code.chomp}\"\n"
-    end
-    def parse_method
-      :"parse_#{parse_type || 'expression'}"
-    end
-  end
+  let(:jack_class) { CompilationEngine::JackClass.new('FunTimes', 1) }
 
   context '#parse_expression' do
     it 'emits VM code for numeric constants' do

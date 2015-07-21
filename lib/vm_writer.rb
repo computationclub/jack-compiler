@@ -7,24 +7,51 @@ class VMWriter
   end
 
   def write_push(segment, index)
-    io.puts("push #{segment} #{index}")
+    io.puts("push #{variable_reference(segment, index)}")
   end
 
   def write_pop(segment, index)
-    io.puts("pop #{segment} #{index}")
+    io.puts("pop #{variable_reference(segment, index)}")
   end
 
-  def write_operation(operation)
+  def variable_reference(segment, index)
+    case segment
+    when 'var', :var
+      "local #{index}"
+    when 'arg', :arg
+      "argument #{index}"
+    when 'field', :field
+      "this #{index}"
+    else
+      "#{segment} #{index}"
+    end
+  end
+
+  def write_binary_operation(operation)
     case operation
     when '+'
       write_arithmetic('add')
     when '-'
-      write_arithmetic('neg')
-    when '~'
-      write_arithmetic('not')
+      write_arithmetic('sub')
     when '*'
       write_call('Math.multiply', 2)
+    when '/'
+      write_call('Math.divide', 2)
+    when '&'
+      write_arithmetic('and')
+    when '|'
+      write_arithmetic('or')
+    when '>'
+      write_arithmetic('gt')
+    when '<'
+      write_arithmetic('lt')
+    when '='
+      write_arithmetic('eq')
     end
+  end
+
+  def write_unary_operation(operation)
+    write_arithmetic({'-' => 'neg', '~' => 'not'}.fetch(operation))
   end
 
   def write_arithmetic(command)

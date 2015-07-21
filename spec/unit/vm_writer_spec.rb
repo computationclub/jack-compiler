@@ -22,6 +22,14 @@ RSpec.describe VMWriter do
       writer.write_push(:local, 7)
       expect(out.string).to eq("push local 7\n")
     end
+
+    it 'translates symbol table segments to VM segments' do
+      out = StringIO.new
+      writer = VMWriter.new(out)
+      writer.write_push(:var, 7)
+      writer.write_push(:arg, 10)
+      expect(out.string).to eq("push local 7\npush argument 10\n")
+    end
   end
 
   describe '#write_pop' do
@@ -30,6 +38,13 @@ RSpec.describe VMWriter do
       writer = VMWriter.new(out)
       writer.write_pop(:local, 7)
       expect(out.string).to eq("pop local 7\n")
+    end
+    it 'translates symbol table segments to VM segments' do
+      out = StringIO.new
+      writer = VMWriter.new(out)
+      writer.write_pop(:var, 7)
+      writer.write_pop(:arg, 10)
+      expect(out.string).to eq("pop local 7\npop argument 10\n")
     end
   end
 
